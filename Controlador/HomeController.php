@@ -37,6 +37,10 @@ class HomeController
             $filtros['marca'] = filter_input(INPUT_GET, 'marca', FILTER_VALIDATE_INT);
         }
         
+        if (isset($_GET['modelo'])) {
+            $filtros['modelo'] = filter_input(INPUT_GET, 'modelo', FILTER_VALIDATE_INT);
+        }
+        
         if (isset($_GET['precio_min'])) {
             $filtros['precio_min'] = filter_input(INPUT_GET, 'precio_min', FILTER_VALIDATE_FLOAT);
         }
@@ -50,12 +54,39 @@ class HomeController
         }
         
         if (isset($_GET['anio_min'])) {
-            $filtros['anio_min'] = filter_input(INPUT_GET, 'anio_min', FILTER_VALIDATE_INT);
+            $filtros['año_min'] = filter_input(INPUT_GET, 'anio_min', FILTER_VALIDATE_INT);
+        }
+        
+        if (isset($_GET['año_max'])) {
+            $filtros['año_max'] = filter_input(INPUT_GET, 'año_max', FILTER_VALIDATE_INT);
+        }
+        
+        if (isset($_GET['combustible'])) {
+            $filtros['combustible'] = filter_input(INPUT_GET, 'combustible', FILTER_SANITIZE_STRING);
         }
 
         $resultados = $this->cocheModel->buscarCoches($filtros);
         $marcas = $this->cocheModel->obtenerMarcas();
 
         require_once __DIR__ . '/../Vista/busqueda.php';
+    }
+
+    public function getModelos(): void
+    {
+        header('Content-Type: application/json');
+        
+        $marcaId = filter_input(INPUT_GET, 'marca', FILTER_VALIDATE_INT);
+        
+        if (!$marcaId) {
+            echo json_encode([]);
+            return;
+        }
+        
+        try {
+            $modelos = $this->cocheModel->obtenerModelosPorMarca($marcaId);
+            echo json_encode($modelos);
+        } catch (Exception $e) {
+            echo json_encode([]);
+        }
     }
 }

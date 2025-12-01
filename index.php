@@ -16,6 +16,9 @@ switch ($action) {
     case 'buscar':
         $controller->buscar();
         break;
+    case 'getModelos':
+        $controller->getModelos();
+        break;
     default:
         $controller->index();
         break;

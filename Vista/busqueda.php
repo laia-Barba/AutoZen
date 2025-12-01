@@ -357,7 +357,7 @@
                             
                             <div class="filter-group">
                                 <label class="filter-label">Marca</label>
-                                <select class="form-select" name="marca">
+                                <select class="form-select" name="marca" id="marcaSelect">
                                     <option value="">Todas las marcas</option>
                                     <?php foreach ($marcas as $marca): ?>
                                         <option value="<?php echo $marca['id']; ?>" 
@@ -365,6 +365,13 @@
                                             <?php echo htmlspecialchars($marca['nombre']); ?>
                                         </option>
                                     <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label class="filter-label">Modelo</label>
+                                <select class="form-select" name="modelo" id="modeloSelect">
+                                    <option value="">Todos los modelos</option>
                                 </select>
                             </div>
 
@@ -386,9 +393,24 @@
                             </div>
 
                             <div class="filter-group">
-                                <label class="filter-label">Año Mínimo</label>
-                                <input type="number" class="form-control" name="anio_min" 
-                                       placeholder="Ej: 2015" value="<?php echo htmlspecialchars($_GET['anio_min'] ?? ''); ?>">
+                                <label class="filter-label">Combustible</label>
+                                <select class="form-select" name="combustible">
+                                    <option value="">Todos los combustibles</option>
+                                    <option value="Gasolina" <?php echo (isset($_GET['combustible']) && $_GET['combustible'] == 'Gasolina') ? 'selected' : ''; ?>>Gasolina</option>
+                                    <option value="Diesel" <?php echo (isset($_GET['combustible']) && $_GET['combustible'] == 'Diesel') ? 'selected' : ''; ?>>Diesel</option>
+                                    <option value="Eléctrico" <?php echo (isset($_GET['combustible']) && $_GET['combustible'] == 'Eléctrico') ? 'selected' : ''; ?>>Eléctrico</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label class="filter-label">Año</label>
+                                <div class="price-range">
+                                    <input type="number" class="form-control" name="año_min" 
+                                           placeholder="Desde" value="<?php echo htmlspecialchars($_GET['año_min'] ?? ''); ?>">
+                                    <span>-</span>
+                                    <input type="number" class="form-control" name="año_max" 
+                                           placeholder="Hasta" value="<?php echo htmlspecialchars($_GET['año_max'] ?? ''); ?>">
+                                </div>
                             </div>
 
                             <button type="submit" class="filter-btn">
@@ -472,5 +494,51 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const marcaSelect = document.getElementById('marcaSelect');
+    const modeloSelect = document.getElementById('modeloSelect');
+    
+    // Load models when brand changes
+    marcaSelect.addEventListener('change', function() {
+        const marcaId = this.value;
+        
+        // Clear current models
+        modeloSelect.innerHTML = '<option value="">Todos los modelos</option>';
+        
+        if (marcaId) {
+            // Fetch models for selected brand
+            fetch(`index.php?action=getModelos&marca=${marcaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(modelo => {
+                        const option = document.createElement('option');
+                        option.value = modelo.id;
+                        option.textContent = modelo.nombre;
+                        
+                        // Select if previously selected
+                        <?php if (isset($_GET['modelo'])): ?>
+                            if (modelo.id == <?php echo (int)$_GET['modelo']; ?>) {
+                                option.selected = true;
+                            }
+                        <?php endif; ?>
+                        
+                        modeloSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading models:', error);
+                });
+        }
+    });
+    
+    // Trigger change event if brand is pre-selected
+    <?php if (isset($_GET['marca'])): ?>
+        if (marcaSelect.value) {
+            marcaSelect.dispatchEvent(new Event('change'));
+        }
+    <?php endif; ?>
+});
+</script>
 </body>
 </html>
