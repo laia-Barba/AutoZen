@@ -352,7 +352,7 @@
                     <div class="filters-sidebar">
                         <h3 class="filter-title">Filtros</h3>
                         
-                        <form action="index.php" method="GET">
+                        <form id="filterForm" action="index.php" method="GET">
                             <input type="hidden" name="action" value="buscar">
                             
                             <div class="filter-group">
@@ -421,7 +421,7 @@
                 </div>
 
                 <!-- Results -->
-                <div class="col-lg-9">
+                <div class="col-lg-9" id="resultsContainer">
                     <?php if (empty($resultados)): ?>
                         <div class="no-results">
                             <div class="no-results-icon">
@@ -498,6 +498,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     const marcaSelect = document.getElementById('marcaSelect');
     const modeloSelect = document.getElementById('modeloSelect');
+    const filterForm = document.getElementById('filterForm');
+    const resultsContainer = document.getElementById('resultsContainer');
     
     // Load models when brand changes
     marcaSelect.addEventListener('change', function() {
@@ -511,25 +513,55 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(`index.php?action=getModelos&marca=${marcaId}`)
                 .then(response => response.json())
                 .then(data => {
-                    data.forEach(modelo => {
+                    if (data.length === 0) {
+                        // Show message when no models are available
                         const option = document.createElement('option');
-                        option.value = modelo.id;
-                        option.textContent = modelo.nombre;
-                        
-                        // Select if previously selected
-                        <?php if (isset($_GET['modelo'])): ?>
-                            if (modelo.id == <?php echo (int)$_GET['modelo']; ?>) {
-                                option.selected = true;
-                            }
-                        <?php endif; ?>
-                        
+                        option.value = "";
+                        option.textContent = "No hay ningun modelo disponible en este momento";
+                        option.disabled = true;
                         modeloSelect.appendChild(option);
-                    });
+                    } else {
+                        data.forEach(modelo => {
+                            const option = document.createElement('option');
+                            option.value = modelo.id;
+                            option.textContent = modelo.nombre;
+                            modeloSelect.appendChild(option);
+                        });
+                    }
                 })
                 .catch(error => {
                     console.error('Error loading models:', error);
                 });
         }
+    });
+    
+    // Handle form submission with AJAX
+    filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        resultsContainer.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+        
+        // Get form data
+        const formData = new FormData(filterForm);
+        const queryString = new URLSearchParams(formData).toString();
+        
+        // Make AJAX request
+        fetch(`index.php?action=buscar&${queryString}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Directly use the returned HTML since AJAX returns only the results
+            resultsContainer.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultsContainer.innerHTML = '<div class="no-results"><h3>Error de conexión</h3><p>No se pudieron cargar los resultados. Verifica tu conexión a internet.</p></div>';
+        });
     });
     
     // Trigger change event if brand is pre-selected

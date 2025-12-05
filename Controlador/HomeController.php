@@ -68,7 +68,90 @@ class HomeController
         $resultados = $this->cocheModel->buscarCoches($filtros);
         $marcas = $this->cocheModel->obtenerMarcas();
 
-        require_once __DIR__ . '/../Vista/busqueda.php';
+        // Check if this is an AJAX request
+        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+                 strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+        if ($isAjax) {
+            // Return only the results HTML for AJAX requests
+            $this->renderResults($resultados);
+        } else {
+            // Return full page for regular requests
+            require_once __DIR__ . '/../Vista/busqueda.php';
+        }
+    }
+
+    private function renderResults(array $resultados): void
+    {
+        ob_start();
+        if (empty($resultados)) {
+            ?>
+            <div class="no-results">
+                <div class="no-results-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3 class="no-results-title">No se encontraron resultados</h3>
+                <p class="no-results-text">
+                    No hay coches que coincidan con los criterios de búsqueda seleccionados.
+                    Intenta ajustar los filtros para ver más opciones.
+                </p>
+                <a href="index.php" class="btn-primary-custom">
+                    <i class="fas fa-home"></i> Volver al Inicio
+                </a>
+            </div>
+            <?php
+        } else {
+            ?>
+            <div class="row">
+                <?php foreach ($resultados as $coche): ?>
+                    <div class="col-lg-6">
+                        <div class="car-card">
+                            <div class="car-image-container">
+                                <img src="https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=<?php echo urlencode($coche['marca'] . ' ' . $coche['modelo']); ?>" 
+                                     alt="<?php echo htmlspecialchars($coche['marca'] . ' ' . $coche['modelo']); ?>" 
+                                     class="car-image">
+                            </div>
+                            <div class="car-details">
+                                <h3 class="car-title">
+                                    <?php echo htmlspecialchars($coche['marca'] . ' ' . $coche['modelo']); ?>
+                                </h3>
+                                <div class="car-specs">
+                                    <div class="spec-item">
+                                        <i class="fas fa-calendar"></i>
+                                        <span><?php echo $coche['año']; ?></span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <i class="fas fa-tachometer-alt"></i>
+                                        <span><?php echo number_format($coche['km'], 0, ',', '.'); ?> km</span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <i class="fas fa-gas-pump"></i>
+                                        <span><?php echo htmlspecialchars($coche['combustible']); ?></span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <i class="fas fa-cog"></i>
+                                        <span><?php echo htmlspecialchars($coche['cambio'] ?? 'Manual'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="car-price">
+                                    <?php echo number_format($coche['precio'], 0, ',', '.'); ?>€
+                                </div>
+                                <div class="car-actions">
+                                    <button class="btn-primary-custom">
+                                        <i class="fas fa-eye"></i> Ver Detalles
+                                    </button>
+                                    <button class="btn-secondary-custom">
+                                        <i class="fas fa-heart"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <?php
+        }
+        echo ob_get_clean();
     }
 
     public function getModelos(): void
