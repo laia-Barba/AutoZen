@@ -80,6 +80,97 @@
             width: 100%;
         }
 
+        /* User Menu Styles */
+        .user-menu-container {
+            position: relative;
+        }
+
+        .user-icon-btn {
+            color: var(--dark-color) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none !important;
+            background: none !important;
+            padding: 8px 12px !important;
+            border-radius: 8px;
+        }
+
+        .user-icon-btn:hover {
+            color: var(--primary-color) !important;
+            background: rgba(255, 107, 53, 0.1) !important;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .user-popup {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            min-width: 250px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            margin-top: 10px;
+        }
+
+        .user-popup.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .popup-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .popup-header i {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .popup-actions {
+            padding: 10px 0;
+        }
+
+        .popup-action {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--dark-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .popup-action:hover {
+            background: var(--light-bg);
+            color: var(--primary-color);
+        }
+
+        .popup-action.logout:hover {
+            background: #fee;
+            color: #dc3545;
+        }
+
+        .popup-action i {
+            width: 20px;
+            text-align: center;
+        }
+
         /* Hero Section */
         .hero-section {
             margin-top: 80px;
@@ -395,7 +486,7 @@
                         <a class="nav-link" href="#inicio">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#coches">Coches</a>
+                        <a class="nav-link" href="index.php?action=buscar">Coches</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#destacados">Destacados</a>
@@ -403,10 +494,73 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#contacto">Contacto</a>
                     </li>
+                    
+                    <li class="nav-item">
+                        <div class="user-menu-container">
+                            <button class="btn btn-link nav-link user-icon-btn" id="userMenuBtn">
+                                <i class="fas fa-user"></i>
+                                <?php if ($estaLogueado): ?>
+                                    <span class="user-name ms-2"><?php echo htmlspecialchars($usuarioActual['Nombre']); ?></span>
+                                <?php endif; ?>
+                            </button>
+                            
+                            <!-- Popup Menu -->
+                            <div class="user-popup" id="userPopup">
+                                <?php if ($estaLogueado): ?>
+                                    <div class="popup-header">
+                                        <i class="fas fa-user-circle"></i>
+                                        <span><?php echo htmlspecialchars($usuarioActual['Nombre']); ?></span>
+                                    </div>
+                                    <div class="popup-actions">
+                                        <a href="index.php?action=perfil" class="popup-action">
+                                            <i class="fas fa-user"></i>
+                                            <span>Ver Perfil</span>
+                                        </a>
+                                        <?php if ($esAdmin): ?>
+                                            <a href="#" class="popup-action">
+                                                <i class="fas fa-cog"></i>
+                                                <span>Administración</span>
+                                            </a>
+                                        <?php endif; ?>
+                                        <a href="index.php?action=logout" class="popup-action logout">
+                                            <i class="fas fa-sign-out-alt"></i>
+                                            <span>Cerrar Sesión</span>
+                                        </a>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="popup-header">
+                                        <i class="fas fa-user-circle"></i>
+                                        <span>Mi Cuenta</span>
+                                    </div>
+                                    <div class="popup-actions">
+                                        <a href="index.php?action=login" class="popup-action">
+                                            <i class="fas fa-sign-in-alt"></i>
+                                            <span>Iniciar Sesión</span>
+                                        </a>
+                                        <a href="index.php?action=registro" class="popup-action">
+                                            <i class="fas fa-user-plus"></i>
+                                            <span>Registrarse</span>
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
+
+    <!-- Success Messages -->
+    <?php if (isset($_SESSION['mensaje'])): ?>
+        <div class="container mt-3">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($_SESSION['mensaje']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+        <?php unset($_SESSION['mensaje']); ?>
+    <?php endif; ?>
 
     <!-- Hero Section -->
     <section class="hero-section" id="inicio">
@@ -588,6 +742,65 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // User Menu Popup Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 AutoZen - User menu initialized');
+            
+            const userMenuBtn = document.getElementById('userMenuBtn');
+            const userPopup = document.getElementById('userPopup');
+            
+            if (userMenuBtn && userPopup) {
+                console.log('✅ User menu elements found');
+                
+                // Toggle popup
+                userMenuBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    console.log('👤 User menu button clicked');
+                    
+                    const isOpen = userPopup.classList.contains('show');
+                    
+                    if (isOpen) {
+                        console.log('🔽 Closing user popup');
+                        userPopup.classList.remove('show');
+                    } else {
+                        console.log('🔼 Opening user popup');
+                        userPopup.classList.add('show');
+                        
+                        // Log user status
+                        <?php if ($estaLogueado): ?>
+                            console.log('👋 User logged in:', '<?php echo htmlspecialchars($usuarioActual['Nombre']); ?>');
+                            console.log('🔑 Is admin:', <?php echo $esAdmin ? 'true' : 'false'; ?>);
+                        <?php else: ?>
+                            console.log('🔒 User not logged in');
+                        <?php endif; ?>
+                    }
+                });
+                
+                // Close popup when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!userMenuBtn.contains(e.target) && !userPopup.contains(e.target)) {
+                        if (userPopup.classList.contains('show')) {
+                            console.log('🔽 Closing popup (clicked outside)');
+                            userPopup.classList.remove('show');
+                        }
+                    }
+                });
+                
+                // Log popup action clicks
+                const popupActions = userPopup.querySelectorAll('.popup-action');
+                popupActions.forEach(action => {
+                    action.addEventListener('click', function() {
+                        const actionText = this.querySelector('span').textContent;
+                        console.log('🎯 Popup action clicked:', actionText);
+                    });
+                });
+                
+            } else {
+                console.error('❌ User menu elements not found');
+            }
+        });
+    </script>
     <script>
         // Smooth scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {

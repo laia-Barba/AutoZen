@@ -6,10 +6,12 @@ use Modelo\CocheModel;
 class HomeController
 {
     private CocheModel $cocheModel;
+    private AuthController $authController;
 
     public function __construct()
     {
         $this->cocheModel = new CocheModel();
+        $this->authController = new AuthController();
     }
 
     public function index(): void
@@ -19,6 +21,11 @@ class HomeController
             $cochesDestacados = $this->cocheModel->obtenerCochesDestacados(6);
             $marcas = $this->cocheModel->obtenerMarcas();
             $estadisticas = $this->cocheModel->obtenerEstadisticas();
+            
+            // Obtener datos de autenticación
+            $estaLogueado = $this->authController->estaLogueado();
+            $usuarioActual = $estaLogueado ? $this->authController->getUsuarioActual() : null;
+            $esAdmin = $estaLogueado ? $this->authController->esAdmin() : false;
 
             // Cargar la vista con los datos
             require_once __DIR__ . '/../Vista/home.php';
@@ -67,6 +74,11 @@ class HomeController
 
         $resultados = $this->cocheModel->buscarCoches($filtros);
         $marcas = $this->cocheModel->obtenerMarcas();
+        
+        // Obtener datos de autenticación
+        $estaLogueado = $this->authController->estaLogueado();
+        $usuarioActual = $estaLogueado ? $this->authController->getUsuarioActual() : null;
+        $esAdmin = $estaLogueado ? $this->authController->esAdmin() : false;
 
         // Check if this is an AJAX request
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
