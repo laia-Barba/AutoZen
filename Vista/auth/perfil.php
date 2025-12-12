@@ -159,20 +159,13 @@
     </style>
 </head>
 <body>
-    <!-- Navegación -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <a class="navbar-brand" href="index.php">
-                <i class="fas fa-car"></i> AutoZen
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="index.php">Inicio</a>
-                <a class="nav-link" href="index.php?action=buscar">Buscar Coches</a>
-                <a class="nav-link active" href="index.php?action=perfil">Mi Perfil</a>
-                <a class="nav-link" href="index.php?action=logout">Cerrar Sesión</a>
-            </div>
-        </div>
-    </nav>
+    <!-- Back Button -->
+<div class="container mt-4">
+    <a href="index.php" class="btn btn-secondary-custom">
+        <i class="fas fa-arrow-left me-2"></i>
+        Volver al Inicio
+    </a>
+</div>
 
     <!-- Main Content -->
     <div class="main-content">
