@@ -119,7 +119,12 @@ class HomeController
                     <div class="col-lg-6">
                         <div class="car-card">
                             <div class="car-image-container">
-                                <img src="https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=<?php echo urlencode($coche['marca'] . ' ' . $coche['modelo']); ?>" 
+                                <?php
+                                    $img = isset($coche['imagen']) && $coche['imagen']
+                                        ? $coche['imagen']
+                                        : 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=' . urlencode($coche['marca'] . ' ' . $coche['modelo']);
+                                ?>
+                                <img src="<?php echo htmlspecialchars($img); ?>" 
                                      alt="<?php echo htmlspecialchars($coche['marca'] . ' ' . $coche['modelo']); ?>" 
                                      class="car-image">
                             </div>
@@ -130,11 +135,11 @@ class HomeController
                                 <div class="car-specs">
                                     <div class="spec-item">
                                         <i class="fas fa-calendar"></i>
-                                        <span><?php echo $coche['año']; ?></span>
+                                        <span><?php echo isset($coche['año']) ? (int)$coche['año'] : ''; ?></span>
                                     </div>
                                     <div class="spec-item">
                                         <i class="fas fa-tachometer-alt"></i>
-                                        <span><?php echo number_format($coche['km'], 0, ',', '.'); ?> km</span>
+                                        <span><?php echo isset($coche['km']) ? number_format($coche['km'], 0, ',', '.') : '0'; ?> km</span>
                                     </div>
                                     <div class="spec-item">
                                         <i class="fas fa-gas-pump"></i>

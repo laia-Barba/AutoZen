@@ -16,7 +16,7 @@ class CocheModel
     public function obtenerCochesDestacados(int $limite = 6): array
     {
         $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.año, v.precio, v.km, 
-                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.descripcion
+                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.descripcion, v.imagen
                 FROM vehiculos v
                 INNER JOIN marcas m ON v.idMarca = m.idMarca
                 INNER JOIN modelo mo ON v.idModelo = mo.idModelo
@@ -33,7 +33,7 @@ class CocheModel
     public function obtenerCochesRecientes(int $limite = 8): array
     {
         $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.año, v.precio, v.km, 
-                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.descripcion
+                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.descripcion, v.imagen
                 FROM vehiculos v
                 INNER JOIN marcas m ON v.idMarca = m.idMarca
                 INNER JOIN modelo mo ON v.idModelo = mo.idModelo
@@ -89,7 +89,7 @@ class CocheModel
     public function buscarCoches(array $filtros = []): array
     {
         $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.año, v.precio, v.km, 
-                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.descripcion
+                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.descripcion, v.imagen
                 FROM vehiculos v
                 INNER JOIN marcas m ON v.idMarca = m.idMarca
                 INNER JOIN modelo mo ON v.idModelo = mo.idModelo
@@ -147,5 +147,39 @@ class CocheModel
         $stmt->execute();
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Inserta un nuevo vehículo en la tabla 'vehiculos'.
+     * Espera claves: idMarca, idModelo, km, combustible, color, año, cambio,
+     *                consumo, motor, descripcion, precio, imagen (opcional)
+     */
+    public function crearVehiculo(array $data): int
+    {
+        $sql = "INSERT INTO vehiculos (
+                    idMarca, idModelo, km, combustible, color, año, cambio,
+                    consumo, motor, descripcion, precio, imagen
+                ) VALUES (
+                    :idMarca, :idModelo, :km, :combustible, :color, :anio, :cambio,
+                    :consumo, :motor, :descripcion, :precio, :imagen
+                )";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bindValue(':idMarca', (int)$data['idMarca'], PDO::PARAM_INT);
+        $stmt->bindValue(':idModelo', (int)$data['idModelo'], PDO::PARAM_INT);
+        $stmt->bindValue(':km', (int)$data['km'], PDO::PARAM_INT);
+        $stmt->bindValue(':combustible', $data['combustible'], PDO::PARAM_STR);
+        $stmt->bindValue(':color', $data['color'], PDO::PARAM_STR);
+        $stmt->bindValue(':anio', (int)$data['año'], PDO::PARAM_INT);
+        $stmt->bindValue(':cambio', $data['cambio'], PDO::PARAM_STR);
+        $stmt->bindValue(':consumo', $data['consumo'] !== '' ? $data['consumo'] : null, $data['consumo'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        $stmt->bindValue(':motor', $data['motor'] ?? null, isset($data['motor']) && $data['motor'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        $stmt->bindValue(':descripcion', $data['descripcion'] ?? null, isset($data['descripcion']) && $data['descripcion'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        $stmt->bindValue(':precio', $data['precio'], PDO::PARAM_STR);
+        $stmt->bindValue(':imagen', $data['imagen'] ?? null, isset($data['imagen']) && $data['imagen'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+
+        $stmt->execute();
+        return (int)$this->db->lastInsertId();
     }
 }

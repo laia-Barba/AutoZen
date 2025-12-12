@@ -12,9 +12,11 @@ require_once 'Modelo/CocheModel.php';
 require_once 'Modelo/UserModel.php';
 require_once 'Controlador/HomeController.php';
 require_once 'Controlador/AuthController.php';
+require_once 'Controlador/AdminController.php';
 
 use Controlador\HomeController;
 use Controlador\AuthController;
+use Controlador\AdminController;
 
 $action = $_GET['action'] ?? 'index';
 
@@ -22,6 +24,7 @@ error_log("Processing action: " . $action);
 
 $homeController = new HomeController();
 $authController = new AuthController();
+$adminController = new AdminController();
 
 switch ($action) {
     case 'index':
@@ -31,6 +34,10 @@ switch ($action) {
     case 'buscar':
         error_log("Executing buscar case");
         $homeController->buscar();
+        break;
+    case 'getModelos':
+        error_log("Executing getModelos case");
+        $homeController->getModelos();
         break;
     case 'getModelos':
         error_log("Executing getModelos case");
@@ -61,6 +68,14 @@ switch ($action) {
     case 'perfil':
         error_log("Executing perfil case");
         $authController->mostrarPerfil();
+        break;
+    case 'admin':
+        error_log("Executing admin case");
+        $adminController->dashboard();
+        break;
+    case 'addCar':
+        error_log("Executing addCar case");
+        $adminController->addCar();
         break;
     default:
         error_log("Executing default case");

@@ -585,10 +585,39 @@
                                 <div class="col-lg-6">
                                     <div class="car-card">
                                         <div class="car-image-container">
-                                            <img src="https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=<?php echo urlencode($coche['marca'] . ' ' . $coche['modelo']); ?>" 
-                                                 alt="<?php echo htmlspecialchars($coche['marca'] . ' ' . $coche['modelo']); ?>" 
+                                            <?php
+                                                $imgPath = isset($coche['imagen']) && $coche['imagen']
+                                                    ? $coche['imagen']
+                                                    : 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=' . urlencode($coche['marca'] . ' ' . $coche['modelo']);
+
+                                                // Normalizar a ruta web
+                                                if (strpos($imgPath, 'http') === 0) {
+                                                    $img = $imgPath; // URL absoluta ya válida
+                                                } else {
+                                                    $p = str_replace('\\', '/', $imgPath);
+                                                    // Intentar cortar desde /htdocs/ o /AutoZen/
+                                                    if (($pos = stripos($p, '/htdocs/')) !== false) {
+                                                        $rel = substr($p, $pos + strlen('/htdocs/')); // AutoZen/imagenes/...
+                                                        $img = '/' . ltrim($rel, '/');
+                                                    } elseif (($pos = stripos($p, '/AutoZen/')) !== false) {
+                                                        $rel = substr($p, $pos); // /AutoZen/imagenes/...
+                                                        $img = $rel;
+                                                    } else {
+                                                        // Tratar como relativa
+                                                        $img = '/' . ltrim($p, '/');
+                                                    }
+
+                                                    // Prepend base del script si hiciera falta
+                                                    $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+                                                    if ($base && strpos($img, $base) !== 0) {
+                                                        $img = $base . $img;
+                                                    }
+                                                }
+                                            ?>
+                                            <img src="<?php echo htmlspecialchars($img); ?>"
+                                                 alt="<?php echo htmlspecialchars($coche['marca'] . ' ' . $coche['modelo']); ?>"
                                                  class="car-image">
-                                            <?php if ($coche['destacado']): ?>
+                                            <?php if (!empty($coche['destacado'])): ?>
                                                 <div class="car-badge">DESTACADO</div>
                                             <?php endif; ?>
                                         </div>
@@ -599,11 +628,11 @@
                                             <div class="car-specs">
                                                 <div class="spec-item">
                                                     <i class="fas fa-calendar"></i>
-                                                    <span><?php echo $coche['anio']; ?></span>
+                                                    <span><?php echo isset($coche['año']) ? (int)$coche['año'] : ''; ?></span>
                                                 </div>
                                                 <div class="spec-item">
                                                     <i class="fas fa-tachometer-alt"></i>
-                                                    <span><?php echo number_format($coche['kilometraje'], 0, ',', '.'); ?> km</span>
+                                                    <span><?php echo isset($coche['km']) ? number_format($coche['km'], 0, ',', '.') : '0'; ?> km</span>
                                                 </div>
                                                 <div class="spec-item">
                                                     <i class="fas fa-gas-pump"></i>

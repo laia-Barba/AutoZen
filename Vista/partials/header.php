@@ -48,11 +48,15 @@
                                         <span>Ver Perfil</span>
                                     </a>
                                     <?php if (isset($esAdmin) && $esAdmin): ?>
-                                        <a href="#" class="popup-action">
+                                        <a href="index.php?action=admin" class="popup-action">
                                             <i class="fas fa-cog"></i>
                                             <span>Administración</span>
                                         </a>
-                                    <?php endif; ?>
+                                        <a href="index.php?action=addCar" class="popup-action">
+                                            <i class="fas fa-plus-circle"></i>
+                                            <span>Añadir Coches</span>
+                                        </a>
+                                    <?php endif; ?> 
                                     <a href="index.php?action=logout" class="popup-action logout">
                                         <i class="fas fa-sign-out-alt"></i>
                                         <span>Cerrar Sesión</span>

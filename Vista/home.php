@@ -517,7 +517,7 @@
                                             <span>Ver Perfil</span>
                                         </a>
                                         <?php if ($esAdmin): ?>
-                                            <a href="#" class="popup-action">
+                                            <a href="index.php?action=admin" class="popup-action">
                                                 <i class="fas fa-cog"></i>
                                                 <span>Administración</span>
                                             </a>
@@ -665,7 +665,30 @@
                         <div class="col-lg-4 col-md-6 mb-4">
                             <div class="car-card">
                                 <div class="car-image-container">
-                                    <img src="https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=<?php echo urlencode($coche['marca'] . ' ' . $coche['modelo']); ?>" 
+                                    <?php
+                                        $imgPath = isset($coche['imagen']) && $coche['imagen']
+                                            ? $coche['imagen']
+                                            : 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=' . urlencode($coche['marca'] . ' ' . $coche['modelo']);
+                                        if (strpos($imgPath, 'http') === 0) {
+                                            $img = $imgPath;
+                                        } else {
+                                            $p = str_replace('\\', '/', $imgPath);
+                                            if (($pos = stripos($p, '/htdocs/')) !== false) {
+                                                $rel = substr($p, $pos + strlen('/htdocs/'));
+                                                $img = '/' . ltrim($rel, '/');
+                                            } elseif (($pos = stripos($p, '/AutoZen/')) !== false) {
+                                                $rel = substr($p, $pos);
+                                                $img = $rel;
+                                            } else {
+                                                $img = '/' . ltrim($p, '/');
+                                            }
+                                            $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+                                            if ($base && strpos($img, $base) !== 0) {
+                                                $img = $base . $img;
+                                            }
+                                        }
+                                    ?>
+                                    <img src="<?php echo htmlspecialchars($img); ?>" 
                                          alt="<?php echo htmlspecialchars($coche['marca'] . ' ' . $coche['modelo']); ?>" 
                                          class="car-image">
                                 </div>
@@ -675,11 +698,11 @@
                                     <div class="car-specs">
                                         <div class="spec-item">
                                             <i class="fas fa-calendar"></i>
-                                            <?php echo $coche['anio']; ?>
+                                            <?php echo isset($coche['año']) ? (int)$coche['año'] : ''; ?>
                                         </div>
                                         <div class="spec-item">
                                             <i class="fas fa-tachometer-alt"></i>
-                                            <?php echo number_format($coche['kilometraje'], 0, ',', '.'); ?> km
+                                            <?php echo isset($coche['km']) ? number_format($coche['km'], 0, ',', '.') : '0'; ?> km
                                         </div>
                                         <div class="spec-item">
                                             <i class="fas fa-gas-pump"></i>
@@ -787,14 +810,14 @@
                     }
                 });
                 
-                // Log popup action clicks
+                /* Log popup action clicks
                 const popupActions = userPopup.querySelectorAll('.popup-action');
                 popupActions.forEach(action => {
                     action.addEventListener('click', function() {
                         const actionText = this.querySelector('span').textContent;
                         console.log('🎯 Popup action clicked:', actionText);
                     });
-                });
+                }); */
                 
             } else {
                 console.error('❌ User menu elements not found');
@@ -805,8 +828,13 @@
         // Smooth scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                // Skip if href is just "#" or empty
+                if (!href || href === "#") {
+                    return;
+                }
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
+                const target = document.querySelector(href);
                 if (target) {
                     target.scrollIntoView({
                         behavior: 'smooth',
