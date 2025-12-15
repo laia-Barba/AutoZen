@@ -256,12 +256,14 @@
         .car-image {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+            object-position: center center;
+            background: #ffffff;
             transition: transform 0.3s ease;
         }
 
         .car-card:hover .car-image {
-            transform: scale(1.1);
+            transform: none;
         }
 
         .car-badge {

@@ -177,9 +177,54 @@ class CocheModel
         $stmt->bindValue(':motor', $data['motor'] ?? null, isset($data['motor']) && $data['motor'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
         $stmt->bindValue(':descripcion', $data['descripcion'] ?? null, isset($data['descripcion']) && $data['descripcion'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
         $stmt->bindValue(':precio', $data['precio'], PDO::PARAM_STR);
-        $stmt->bindValue(':imagen', $data['imagen'] ?? null, isset($data['imagen']) && $data['imagen'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        // La columna puede ser NOT NULL. Guardamos siempre un string (y luego se actualiza a la imagen principal).
+        $stmt->bindValue(':imagen', isset($data['imagen']) ? (string)$data['imagen'] : '', PDO::PARAM_STR);
 
         $stmt->execute();
         return (int)$this->db->lastInsertId();
+    }
+
+    public function agregarImagenesVehiculo(int $idVehiculo, array $imagenes): int
+    {
+        if (empty($imagenes)) {
+            return 0;
+        }
+
+        $sql = "INSERT INTO vehiculo_imagenes (idVehiculo, ruta, esPrincipal) VALUES ";
+        $values = [];
+        $params = [];
+        $i = 0;
+
+        foreach ($imagenes as $img) {
+            $values[] = "(:idVehiculo_{$i}, :ruta_{$i}, :esPrincipal_{$i})";
+            $params[":idVehiculo_{$i}"] = $idVehiculo;
+            $params[":ruta_{$i}"] = $img['ruta'];
+            $params[":esPrincipal_{$i}"] = $img['esPrincipal'];
+            $i++;
+        }
+
+        $sql .= implode(', ', $values);
+        $stmt = $this->db->prepare($sql);
+
+        foreach ($params as $key => $val) {
+            // Los placeholders son :idVehiculo_0 y :esPrincipal_0
+            if (strpos($key, ':idVehiculo_') === 0 || strpos($key, ':esPrincipal_') === 0) {
+                $stmt->bindValue($key, (int)$val, PDO::PARAM_INT);
+            } else {
+                $stmt->bindValue($key, (string)$val, PDO::PARAM_STR);
+            }
+        }
+
+        $stmt->execute();
+        return $stmt->rowCount();
+    }
+
+    public function updateImagenPrincipal(int $idVehiculo, string $rutaImagen): bool
+    {
+        $sql = "UPDATE vehiculos SET imagen = :ruta WHERE idVehiculo = :idVehiculo";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':ruta', $rutaImagen, PDO::PARAM_STR);
+        $stmt->bindParam(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        return $stmt->execute();
     }
 }

@@ -76,21 +76,8 @@ class AdminController
         if (empty($data['cambio'])) $errores[] = 'El cambio es obligatorio';
         if ($data['precio'] === '' || !is_numeric($data['precio'])) $errores[] = 'El precio es obligatorio y debe ser numérico';
 
-        // Manejo de imagen (opcional)
-        if (!empty($_FILES['imagen']['name'])) {
-            $uploadDir = __DIR__ . '/../uploads/vehiculos/';
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0775, true);
-            }
-            $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '_', $_FILES['imagen']['name']);
-            $destPath = $uploadDir . $safeName;
-            if (move_uploaded_file($_FILES['imagen']['tmp_name'], $destPath)) {
-                // Ruta pública relativa
-                $data['imagen'] = 'uploads/vehiculos/' . $safeName;
-            } else {
-                $errores[] = 'No se pudo subir la imagen.';
-            }
-        }
+        // El manejo de imágenes se hará después de crear el vehículo
+        $data['imagen'] = null; // Se establecerá después con la principal
 
         if (!empty($errores)) {
             $_SESSION['errores'] = $errores;
@@ -100,8 +87,41 @@ class AdminController
         }
 
         try {
-            $id = $this->cocheModel->crearVehiculo($data);
-            $_SESSION['mensaje'] = 'Vehículo creado correctamente (ID ' . $id . ')';
+            $idVehiculo = $this->cocheModel->crearVehiculo($data);
+
+            // Ahora, manejar las imágenes
+            if (!empty($_FILES['imagenes']['name'][0])) {
+                $uploadDir = __DIR__ . '/../uploads/vehiculos/';
+                if (!is_dir($uploadDir)) @mkdir($uploadDir, 0775, true);
+
+                $imagenesGuardadas = [];
+                $indicePrincipal = isset($_POST['imagen_principal']) ? (int)$_POST['imagen_principal'] : 0;
+                $rutaPrincipal = '';
+
+                foreach ($_FILES['imagenes']['name'] as $i => $name) {
+                    if ($_FILES['imagenes']['error'][$i] !== UPLOAD_ERR_OK) continue;
+
+                    $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '_', $name);
+                    $destPath = $uploadDir . $safeName;
+
+                    if (move_uploaded_file($_FILES['imagenes']['tmp_name'][$i], $destPath)) {
+                        $esPrincipal = ($i === $indicePrincipal);
+                        $imagenesGuardadas[] = ['ruta' => $destPath, 'esPrincipal' => $esPrincipal ? 1 : 0];
+                        if ($esPrincipal) {
+                            $rutaPrincipal = $destPath;
+                        }
+                    }
+                }
+
+                if (!empty($imagenesGuardadas)) {
+                    $this->cocheModel->agregarImagenesVehiculo($idVehiculo, $imagenesGuardadas);
+                    if ($rutaPrincipal) {
+                        $this->cocheModel->updateImagenPrincipal($idVehiculo, $rutaPrincipal);
+                    }
+                }
+            }
+
+            $_SESSION['mensaje'] = 'Vehículo creado correctamente (ID ' . $idVehiculo . ')';
             header('Location: index.php?action=admin');
             exit;
         } catch (\Throwable $e) {

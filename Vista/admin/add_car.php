@@ -107,8 +107,9 @@
                         <textarea name="descripcion" rows="4" class="form-control"><?php echo htmlspecialchars($_SESSION['datos_formulario']['descripcion'] ?? ''); ?></textarea>
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Imagen (opcional)</label>
-                        <input type="file" name="imagen" class="form-control" accept="image/*">
+                        <label class="form-label">Imágenes (múltiples permitidas)</label>
+                        <input type="file" name="imagenes[]" class="form-control" accept="image/*" multiple id="imageUpload">
+                        <div id="imagePreview" class="mt-3 d-flex flex-wrap gap-3"></div>
                     </div>
                 </div>
                 <div class="mt-4 d-flex gap-2">
@@ -146,6 +147,57 @@
         }
         marca.addEventListener('change', ()=> loadModelos(marca.value));
         if(marca.value){ loadModelos(marca.value, '<?php echo htmlspecialchars($_SESSION['datos_formulario']['idModelo'] ?? ''); ?>'); }
+
+        // Image preview with principal selection
+        const imageUpload = document.getElementById('imageUpload');
+        const imagePreview = document.getElementById('imagePreview');
+
+        imageUpload.addEventListener('change', function() {
+            imagePreview.innerHTML = ''; // Clear previous previews
+            const files = this.files;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.startsWith('image/')) continue;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Create container for image and radio button
+                    const previewContainer = document.createElement('div');
+                    previewContainer.className = 'position-relative';
+
+                    // Create image element
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.height = '100px';
+                    img.style.width = 'auto';
+                    img.style.borderRadius = '8px';
+                    img.style.marginRight = '10px';
+
+                    // Create radio button for principal image selection
+                    const radioContainer = document.createElement('div');
+                    radioContainer.className = 'form-check position-absolute top-0 start-0 p-2 bg-white rounded';
+                    
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = 'imagen_principal';
+                    radio.value = i; // Use file index as value
+                    radio.className = 'form-check-input';
+                    if (i === 0) radio.checked = true; // First image is principal by default
+
+                    const label = document.createElement('label');
+                    label.className = 'form-check-label small';
+                    label.textContent = 'Ppal.';
+
+                    radioContainer.appendChild(radio);
+                    radioContainer.appendChild(label);
+                    previewContainer.appendChild(img);
+                    previewContainer.appendChild(radioContainer);
+                    imagePreview.appendChild(previewContainer);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
     });
     </script>
 </body>
