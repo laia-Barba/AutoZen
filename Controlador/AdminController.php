@@ -180,4 +180,161 @@ class AdminController
         header('Location: index.php?action=manageCars');
         exit;
     }
+
+    public function editCar(): void
+    {
+        if (!$this->authController->estaLogueado() || !$this->authController->esAdmin()) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        $usuarioActual = $this->authController->getUsuarioActual();
+        $esAdmin = true;
+
+        $idVehiculo = (int)($_GET['id'] ?? ($_POST['idVehiculo'] ?? 0));
+        if ($idVehiculo <= 0) {
+            $_SESSION['errores'] = ['ID de vehículo inválido'];
+            header('Location: index.php?action=manageCars');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $vehiculo = $this->cocheModel->obtenerVehiculoPorIdAdmin($idVehiculo);
+            if (!$vehiculo) {
+                $_SESSION['errores'] = ['Vehículo no encontrado'];
+                header('Location: index.php?action=manageCars');
+                exit;
+            }
+
+            $marcas = $this->cocheModel->obtenerMarcas();
+            $imagenes = $this->cocheModel->obtenerImagenesVehiculo($idVehiculo);
+
+            require_once __DIR__ . '/../Vista/admin/edit_car.php';
+            return;
+        }
+
+        $data = [
+            'idMarca' => (int)($_POST['idMarca'] ?? 0),
+            'idModelo' => (int)($_POST['idModelo'] ?? 0),
+            'km' => (int)($_POST['km'] ?? 0),
+            'combustible' => $_POST['combustible'] ?? '',
+            'color' => $_POST['color'] ?? '',
+            'año' => (int)($_POST['anio'] ?? 0),
+            'cambio' => $_POST['cambio'] ?? '',
+            'consumo' => $_POST['consumo'] ?? '',
+            'motor' => $_POST['motor'] ?? '',
+            'descripcion' => $_POST['descripcion'] ?? '',
+            'precio' => $_POST['precio'] ?? '',
+        ];
+
+        $errores = [];
+        if ($data['idMarca'] <= 0) $errores[] = 'La marca es obligatoria';
+        if ($data['idModelo'] <= 0) $errores[] = 'El modelo es obligatorio';
+        if ($data['km'] < 0) $errores[] = 'El kilometraje no puede ser negativo';
+        if (empty($data['combustible'])) $errores[] = 'El combustible es obligatorio';
+        if (empty($data['color'])) $errores[] = 'El color es obligatorio';
+        if ($data['año'] <= 0) $errores[] = 'El año es obligatorio';
+        if (empty($data['cambio'])) $errores[] = 'El cambio es obligatorio';
+        if ($data['precio'] === '' || !is_numeric($data['precio'])) $errores[] = 'El precio es obligatorio y debe ser numérico';
+
+        if (!empty($errores)) {
+            $_SESSION['errores'] = $errores;
+            header('Location: index.php?action=editCar&id=' . $idVehiculo);
+            exit;
+        }
+
+        try {
+            $this->cocheModel->actualizarVehiculo($idVehiculo, $data);
+
+            $deleteImages = $_POST['delete_images'] ?? [];
+            if (is_array($deleteImages)) {
+                foreach ($deleteImages as $idImagenStr) {
+                    $idImagen = (int)$idImagenStr;
+                    if ($idImagen <= 0) continue;
+
+                    $ruta = $this->cocheModel->obtenerRutaImagenPorId($idImagen, $idVehiculo);
+                    $this->cocheModel->eliminarImagenVehiculo($idImagen, $idVehiculo);
+
+                    if ($ruta) {
+                        $pos = stripos($ruta, 'uploads');
+                        if ($pos !== false) {
+                            @unlink($ruta);
+                        }
+                    }
+                }
+            }
+
+            $principalSeleccion = (string)($_POST['imagen_principal'] ?? '');
+            $principalTipo = '';
+            $principalId = 0;
+            $principalNewIndex = -1;
+
+            if (strpos($principalSeleccion, 'existing_') === 0) {
+                $principalTipo = 'existing';
+                $principalId = (int)substr($principalSeleccion, strlen('existing_'));
+            } elseif (strpos($principalSeleccion, 'new_') === 0) {
+                $principalTipo = 'new';
+                $principalNewIndex = (int)substr($principalSeleccion, strlen('new_'));
+            }
+
+            $rutasNuevas = [];
+            if (!empty($_FILES['imagenes']['name'][0])) {
+                $uploadDir = __DIR__ . '/../uploads/vehiculos/';
+                if (!is_dir($uploadDir)) @mkdir($uploadDir, 0775, true);
+
+                foreach ($_FILES['imagenes']['name'] as $i => $name) {
+                    if ($_FILES['imagenes']['error'][$i] !== UPLOAD_ERR_OK) continue;
+
+                    $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '_', $name);
+                    $destPath = $uploadDir . $safeName;
+
+                    if (move_uploaded_file($_FILES['imagenes']['tmp_name'][$i], $destPath)) {
+                        $rutasNuevas[$i] = $destPath;
+                    }
+                }
+
+                if (!empty($rutasNuevas)) {
+                    $imagenesGuardadas = [];
+                    foreach ($rutasNuevas as $i => $ruta) {
+                        $imagenesGuardadas[] = ['ruta' => $ruta, 'esPrincipal' => 0];
+                    }
+                    $this->cocheModel->agregarImagenesVehiculo($idVehiculo, $imagenesGuardadas);
+                }
+            }
+
+            $principalSet = false;
+            if ($principalTipo === 'existing' && $principalId > 0) {
+                $principalSet = $this->cocheModel->setImagenPrincipalPorIdImagen($idVehiculo, $principalId);
+            } elseif ($principalTipo === 'new' && $principalNewIndex >= 0 && isset($rutasNuevas[$principalNewIndex])) {
+                $principalSet = $this->cocheModel->setImagenPrincipalPorRuta($idVehiculo, $rutasNuevas[$principalNewIndex]);
+            }
+
+            if (!$principalSet) {
+                $imagenesRestantes = $this->cocheModel->obtenerImagenesVehiculo($idVehiculo);
+                if (empty($imagenesRestantes)) {
+                    $this->cocheModel->limpiarImagenPrincipal($idVehiculo);
+                } else {
+                    $principalActual = null;
+                    foreach ($imagenesRestantes as $img) {
+                        if (!empty($img['esPrincipal'])) {
+                            $principalActual = $img;
+                            break;
+                        }
+                    }
+
+                    if (!$principalActual) {
+                        $this->cocheModel->setImagenPrincipalPorIdImagen($idVehiculo, (int)$imagenesRestantes[0]['idImagen']);
+                    }
+                }
+            }
+
+            $_SESSION['mensaje'] = 'Vehículo actualizado correctamente';
+            header('Location: index.php?action=manageCars');
+            exit;
+        } catch (\Throwable $e) {
+            $_SESSION['errores'] = ['Error al actualizar el vehículo: ' . $e->getMessage()];
+            header('Location: index.php?action=editCar&id=' . $idVehiculo);
+            exit;
+        }
+    }
 }

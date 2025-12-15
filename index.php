@@ -85,6 +85,10 @@ switch ($action) {
         error_log("Executing deleteCar case");
         $adminController->deleteCar();
         break;
+    case 'editCar':
+        error_log("Executing editCar case");
+        $adminController->editCar();
+        break;
     default:
         error_log("Executing default case");
         $homeController->index();

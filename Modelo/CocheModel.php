@@ -52,6 +52,138 @@ class CocheModel
         return $stmt->execute();
     }
 
+    public function obtenerVehiculoPorIdAdmin(int $idVehiculo): ?array
+    {
+        $sql = "SELECT v.idVehiculo, v.idMarca, v.idModelo, v.km, v.combustible, v.color, v.año, v.cambio,
+                       v.consumo, v.motor, v.descripcion, v.precio, v.imagen
+                FROM vehiculos v
+                WHERE v.idVehiculo = :idVehiculo";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function actualizarVehiculo(int $idVehiculo, array $data): bool
+    {
+        $sql = "UPDATE vehiculos
+                SET idMarca = :idMarca,
+                    idModelo = :idModelo,
+                    km = :km,
+                    combustible = :combustible,
+                    color = :color,
+                    año = :anio,
+                    cambio = :cambio,
+                    consumo = :consumo,
+                    motor = :motor,
+                    descripcion = :descripcion,
+                    precio = :precio
+                WHERE idVehiculo = :idVehiculo";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bindValue(':idMarca', (int)$data['idMarca'], PDO::PARAM_INT);
+        $stmt->bindValue(':idModelo', (int)$data['idModelo'], PDO::PARAM_INT);
+        $stmt->bindValue(':km', (int)$data['km'], PDO::PARAM_INT);
+        $stmt->bindValue(':combustible', $data['combustible'], PDO::PARAM_STR);
+        $stmt->bindValue(':color', $data['color'], PDO::PARAM_STR);
+        $stmt->bindValue(':anio', (int)$data['año'], PDO::PARAM_INT);
+        $stmt->bindValue(':cambio', $data['cambio'], PDO::PARAM_STR);
+        $stmt->bindValue(':consumo', $data['consumo'] !== '' ? $data['consumo'] : null, $data['consumo'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        $stmt->bindValue(':motor', $data['motor'] ?? null, isset($data['motor']) && $data['motor'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        $stmt->bindValue(':descripcion', $data['descripcion'] ?? null, isset($data['descripcion']) && $data['descripcion'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        $stmt->bindValue(':precio', $data['precio'], PDO::PARAM_STR);
+        $stmt->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    public function obtenerImagenesVehiculo(int $idVehiculo): array
+    {
+        $sql = "SELECT idImagen, ruta, esPrincipal
+                FROM vehiculo_imagenes
+                WHERE idVehiculo = :idVehiculo
+                ORDER BY esPrincipal DESC, idImagen ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function eliminarImagenVehiculo(int $idImagen, int $idVehiculo): bool
+    {
+        $sql = "DELETE FROM vehiculo_imagenes WHERE idImagen = :idImagen AND idVehiculo = :idVehiculo";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':idImagen', $idImagen, PDO::PARAM_INT);
+        $stmt->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    public function obtenerRutaImagenPorId(int $idImagen, int $idVehiculo): ?string
+    {
+        $sql = "SELECT ruta FROM vehiculo_imagenes WHERE idImagen = :idImagen AND idVehiculo = :idVehiculo";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':idImagen', $idImagen, PDO::PARAM_INT);
+        $stmt->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? (string)$row['ruta'] : null;
+    }
+
+    public function limpiarImagenPrincipal(int $idVehiculo): bool
+    {
+        $sql1 = "UPDATE vehiculo_imagenes SET esPrincipal = 0 WHERE idVehiculo = :idVehiculo";
+        $stmt1 = $this->db->prepare($sql1);
+        $stmt1->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        $stmt1->execute();
+
+        $sql2 = "UPDATE vehiculos SET imagen = :ruta WHERE idVehiculo = :idVehiculo";
+        $stmt2 = $this->db->prepare($sql2);
+        $stmt2->bindValue(':ruta', '', PDO::PARAM_STR);
+        $stmt2->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        return $stmt2->execute();
+    }
+
+    public function setImagenPrincipalPorIdImagen(int $idVehiculo, int $idImagen): bool
+    {
+        $ruta = $this->obtenerRutaImagenPorId($idImagen, $idVehiculo);
+        if ($ruta === null) {
+            return false;
+        }
+
+        $sql1 = "UPDATE vehiculo_imagenes SET esPrincipal = 0 WHERE idVehiculo = :idVehiculo";
+        $stmt1 = $this->db->prepare($sql1);
+        $stmt1->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        $stmt1->execute();
+
+        $sql2 = "UPDATE vehiculo_imagenes SET esPrincipal = 1 WHERE idVehiculo = :idVehiculo AND idImagen = :idImagen";
+        $stmt2 = $this->db->prepare($sql2);
+        $stmt2->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        $stmt2->bindValue(':idImagen', $idImagen, PDO::PARAM_INT);
+        $stmt2->execute();
+
+        return $this->updateImagenPrincipal($idVehiculo, $ruta);
+    }
+
+    public function setImagenPrincipalPorRuta(int $idVehiculo, string $ruta): bool
+    {
+        $sql1 = "UPDATE vehiculo_imagenes SET esPrincipal = 0 WHERE idVehiculo = :idVehiculo";
+        $stmt1 = $this->db->prepare($sql1);
+        $stmt1->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        $stmt1->execute();
+
+        $sql2 = "UPDATE vehiculo_imagenes SET esPrincipal = 1 WHERE idVehiculo = :idVehiculo AND ruta = :ruta";
+        $stmt2 = $this->db->prepare($sql2);
+        $stmt2->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        $stmt2->bindValue(':ruta', $ruta, PDO::PARAM_STR);
+        $stmt2->execute();
+
+        return $this->updateImagenPrincipal($idVehiculo, $ruta);
+    }
+
     public function obtenerCochesRecientes(int $limite = 8): array
     {
         $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.año, v.precio, v.km, 
