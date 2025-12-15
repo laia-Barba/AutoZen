@@ -131,4 +131,53 @@ class AdminController
             exit;
         }
     }
+
+    public function manageCars(): void
+    {
+        if (!$this->authController->estaLogueado() || !$this->authController->esAdmin()) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        $usuarioActual = $this->authController->getUsuarioActual();
+        $esAdmin = true;
+
+        $vehiculos = $this->cocheModel->obtenerTodosVehiculosAdmin();
+
+        require_once __DIR__ . '/../Vista/admin/manage_cars.php';
+    }
+
+    public function deleteCar(): void
+    {
+        if (!$this->authController->estaLogueado() || !$this->authController->esAdmin()) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?action=manageCars');
+            exit;
+        }
+
+        $idVehiculo = (int)($_POST['idVehiculo'] ?? 0);
+        if ($idVehiculo <= 0) {
+            $_SESSION['errores'] = ['ID de vehículo inválido'];
+            header('Location: index.php?action=manageCars');
+            exit;
+        }
+
+        try {
+            $ok = $this->cocheModel->eliminarVehiculo($idVehiculo);
+            if ($ok) {
+                $_SESSION['mensaje'] = 'Vehículo eliminado correctamente';
+            } else {
+                $_SESSION['errores'] = ['No se pudo eliminar el vehículo'];
+            }
+        } catch (\Throwable $e) {
+            $_SESSION['errores'] = ['Error al eliminar el vehículo: ' . $e->getMessage()];
+        }
+
+        header('Location: index.php?action=manageCars');
+        exit;
+    }
 }

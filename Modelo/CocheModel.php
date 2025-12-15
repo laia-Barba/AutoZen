@@ -30,6 +30,28 @@ class CocheModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function obtenerTodosVehiculosAdmin(): array
+    {
+        $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.precio, v.imagen
+                FROM vehiculos v
+                INNER JOIN marcas m ON v.idMarca = m.idMarca
+                INNER JOIN modelo mo ON v.idModelo = mo.idModelo
+                ORDER BY v.idVehiculo DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function eliminarVehiculo(int $idVehiculo): bool
+    {
+        $sql = "DELETE FROM vehiculos WHERE idVehiculo = :idVehiculo";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
     public function obtenerCochesRecientes(int $limite = 8): array
     {
         $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.año, v.precio, v.km, 

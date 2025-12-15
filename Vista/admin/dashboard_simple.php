@@ -191,7 +191,7 @@
                     <div class="admin-description">Añade nuevos coches al inventario</div>
                 </a>
 
-                <a href="#" class="admin-card">
+                <a href="index.php?action=manageCars" class="admin-card">
                     <div class="admin-icon">
                         <i class="fas fa-car"></i>
                     </div>

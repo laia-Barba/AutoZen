@@ -77,6 +77,14 @@ switch ($action) {
         error_log("Executing addCar case");
         $adminController->addCar();
         break;
+    case 'manageCars':
+        error_log("Executing manageCars case");
+        $adminController->manageCars();
+        break;
+    case 'deleteCar':
+        error_log("Executing deleteCar case");
+        $adminController->deleteCar();
+        break;
     default:
         error_log("Executing default case");
         $homeController->index();
