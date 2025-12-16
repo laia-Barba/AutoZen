@@ -328,12 +328,18 @@
             border-radius: 10px;
             font-weight: 600;
             flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
             transition: all 0.3s ease;
         }
 
         .btn-primary-custom:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(0, 78, 137, 0.3);
+            text-decoration: none;
+            color: white;
         }
 
         .btn-secondary-custom {
@@ -443,7 +449,7 @@
                                             <span>Ver Perfil</span>
                                         </a>
                                         <?php if ($esAdmin): ?>
-                                            <a href="#" class="popup-action">
+                                            <a href="index.php?action=admin" class="popup-action">
                                                 <i class="fas fa-cog"></i>
                                                 <span>Administración</span>
                                             </a>
@@ -649,9 +655,9 @@
                                                 <?php echo number_format($coche['precio'], 0, ',', '.'); ?>€
                                             </div>
                                             <div class="car-actions">
-                                                <button class="btn-primary-custom">
+                                                <a class="btn-primary-custom" href="index.php?action=detalle&idVehiculo=<?php echo (int)$coche['idVehiculo']; ?>">
                                                     <i class="fas fa-eye"></i> Ver Detalles
-                                                </button>
+                                                </a>
                                                 <button class="btn-secondary-custom">
                                                     <i class="fas fa-heart"></i>
                                                 </button>
@@ -674,7 +680,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const modeloSelect = document.getElementById('modeloSelect');
     const filterForm = document.getElementById('filterForm');
     const resultsContainer = document.getElementById('resultsContainer');
-    
+
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    const userPopup = document.getElementById('userPopup');
+
     // Load models when brand changes
     marcaSelect.addEventListener('change', function() {
         const marcaId = this.value;
@@ -744,6 +753,19 @@ document.addEventListener('DOMContentLoaded', function() {
             marcaSelect.dispatchEvent(new Event('change'));
         }
     <?php endif; ?>
+
+    if (userMenuBtn && userPopup) {
+        userMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userPopup.classList.toggle('show');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!userMenuBtn.contains(e.target) && !userPopup.contains(e.target)) {
+                userPopup.classList.remove('show');
+            }
+        });
+    }
 });
 </script>
 </body>

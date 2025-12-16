@@ -98,6 +98,10 @@
                         <label class="form-label">Consumo (l/100km)</label>
                         <input type="number" step="0.01" name="consumo" class="form-control" value="<?php echo htmlspecialchars($_SESSION['datos_formulario']['consumo'] ?? ''); ?>">
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Potencia (CV)</label>
+                        <input type="number" name="potencia" class="form-control" min="0" value="<?php echo htmlspecialchars($_SESSION['datos_formulario']['potencia'] ?? '0'); ?>" required>
+                    </div>
                     <div class="col-md-8">
                         <label class="form-label">Motor</label>
                         <input type="text" name="motor" class="form-control" value="<?php echo htmlspecialchars($_SESSION['datos_formulario']['motor'] ?? ''); ?>">

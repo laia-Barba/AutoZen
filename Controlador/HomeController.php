@@ -93,6 +93,29 @@ class HomeController
         }
     }
 
+    public function detalle(): void
+    {
+        $idVehiculo = filter_input(INPUT_GET, 'idVehiculo', FILTER_VALIDATE_INT);
+        if (!$idVehiculo) {
+            header('Location: index.php');
+            exit;
+        }
+
+        $vehiculo = $this->cocheModel->obtenerVehiculoDetalle((int)$idVehiculo);
+        if (!$vehiculo) {
+            header('Location: index.php');
+            exit;
+        }
+
+        $imagenes = $this->cocheModel->obtenerImagenesVehiculoPublic((int)$idVehiculo);
+
+        $estaLogueado = $this->authController->estaLogueado();
+        $usuarioActual = $estaLogueado ? $this->authController->getUsuarioActual() : null;
+        $esAdmin = $estaLogueado ? $this->authController->esAdmin() : false;
+
+        require_once __DIR__ . '/../Vista/detalle.php';
+    }
+
     private function renderResults(array $resultados): void
     {
         ob_start();
@@ -154,9 +177,9 @@ class HomeController
                                     <?php echo number_format($coche['precio'], 0, ',', '.'); ?>€
                                 </div>
                                 <div class="car-actions">
-                                    <button class="btn-primary-custom">
+                                    <a class="btn-primary-custom" href="index.php?action=detalle&idVehiculo=<?php echo (int)$coche['idVehiculo']; ?>">
                                         <i class="fas fa-eye"></i> Ver Detalles
-                                    </button>
+                                    </a>
                                     <button class="btn-secondary-custom">
                                         <i class="fas fa-heart"></i>
                                     </button>

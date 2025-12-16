@@ -396,12 +396,18 @@
             padding: 12px;
             border-radius: 10px;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
             transition: all 0.3s ease;
         }
 
         .car-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(0, 78, 137, 0.3);
+            text-decoration: none;
+            color: white;
         }
 
         /* Footer */
@@ -712,9 +718,9 @@
                                         </div>
                                     </div>
                                     <div class="car-price"><?php echo number_format($coche['precio'], 0, ',', '.'); ?>€</div>
-                                    <button class="car-btn">
+                                    <a class="car-btn" href="index.php?action=detalle&idVehiculo=<?php echo (int)$coche['idVehiculo']; ?>">
                                         <i class="fas fa-eye"></i> Ver Detalles
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         </div>

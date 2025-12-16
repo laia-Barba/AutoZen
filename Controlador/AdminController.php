@@ -61,6 +61,7 @@ class AdminController
             'cambio' => $_POST['cambio'] ?? '',
             'consumo' => $_POST['consumo'] ?? '',
             'motor' => $_POST['motor'] ?? '',
+            'potencia' => (int)($_POST['potencia'] ?? 0),
             'descripcion' => $_POST['descripcion'] ?? '',
             'precio' => $_POST['precio'] ?? '',
             'imagen' => null,
@@ -74,6 +75,7 @@ class AdminController
         if (empty($data['color'])) $errores[] = 'El color es obligatorio';
         if ($data['año'] <= 0) $errores[] = 'El año es obligatorio';
         if (empty($data['cambio'])) $errores[] = 'El cambio es obligatorio';
+        if ($data['potencia'] < 0) $errores[] = 'La potencia no puede ser negativa';
         if ($data['precio'] === '' || !is_numeric($data['precio'])) $errores[] = 'El precio es obligatorio y debe ser numérico';
 
         // El manejo de imágenes se hará después de crear el vehículo
@@ -223,6 +225,7 @@ class AdminController
             'cambio' => $_POST['cambio'] ?? '',
             'consumo' => $_POST['consumo'] ?? '',
             'motor' => $_POST['motor'] ?? '',
+            'potencia' => (int)($_POST['potencia'] ?? 0),
             'descripcion' => $_POST['descripcion'] ?? '',
             'precio' => $_POST['precio'] ?? '',
         ];
@@ -235,6 +238,7 @@ class AdminController
         if (empty($data['color'])) $errores[] = 'El color es obligatorio';
         if ($data['año'] <= 0) $errores[] = 'El año es obligatorio';
         if (empty($data['cambio'])) $errores[] = 'El cambio es obligatorio';
+        if ($data['potencia'] < 0) $errores[] = 'La potencia no puede ser negativa';
         if ($data['precio'] === '' || !is_numeric($data['precio'])) $errores[] = 'El precio es obligatorio y debe ser numérico';
 
         if (!empty($errores)) {

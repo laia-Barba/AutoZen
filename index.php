@@ -35,6 +35,10 @@ switch ($action) {
         error_log("Executing buscar case");
         $homeController->buscar();
         break;
+    case 'detalle':
+        error_log("Executing detalle case");
+        $homeController->detalle();
+        break;
     case 'getModelos':
         error_log("Executing getModelos case");
         $homeController->getModelos();

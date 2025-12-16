@@ -16,7 +16,7 @@ class CocheModel
     public function obtenerCochesDestacados(int $limite = 6): array
     {
         $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.año, v.precio, v.km, 
-                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.descripcion, v.imagen
+                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.potencia, v.descripcion, v.imagen
                 FROM vehiculos v
                 INNER JOIN marcas m ON v.idMarca = m.idMarca
                 INNER JOIN modelo mo ON v.idModelo = mo.idModelo
@@ -27,6 +27,34 @@ class CocheModel
         $stmt->bindParam(':limite', $limite, PDO::PARAM_INT);
         $stmt->execute();
         
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function obtenerVehiculoDetalle(int $idVehiculo): ?array
+    {
+        $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.año, v.precio, v.km,
+                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.potencia, v.descripcion, v.imagen
+                FROM vehiculos v
+                INNER JOIN marcas m ON v.idMarca = m.idMarca
+                INNER JOIN modelo mo ON v.idModelo = mo.idModelo
+                WHERE v.idVehiculo = :idVehiculo";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function obtenerImagenesVehiculoPublic(int $idVehiculo): array
+    {
+        $sql = "SELECT idImagen, ruta, esPrincipal
+                FROM vehiculo_imagenes
+                WHERE idVehiculo = :idVehiculo
+                ORDER BY esPrincipal DESC, idImagen ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -55,7 +83,7 @@ class CocheModel
     public function obtenerVehiculoPorIdAdmin(int $idVehiculo): ?array
     {
         $sql = "SELECT v.idVehiculo, v.idMarca, v.idModelo, v.km, v.combustible, v.color, v.año, v.cambio,
-                       v.consumo, v.motor, v.descripcion, v.precio, v.imagen
+                       v.consumo, v.motor, v.potencia, v.descripcion, v.precio, v.imagen
                 FROM vehiculos v
                 WHERE v.idVehiculo = :idVehiculo";
 
@@ -79,6 +107,7 @@ class CocheModel
                     cambio = :cambio,
                     consumo = :consumo,
                     motor = :motor,
+                    potencia = :potencia,
                     descripcion = :descripcion,
                     precio = :precio
                 WHERE idVehiculo = :idVehiculo";
@@ -94,6 +123,7 @@ class CocheModel
         $stmt->bindValue(':cambio', $data['cambio'], PDO::PARAM_STR);
         $stmt->bindValue(':consumo', $data['consumo'] !== '' ? $data['consumo'] : null, $data['consumo'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
         $stmt->bindValue(':motor', $data['motor'] ?? null, isset($data['motor']) && $data['motor'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        $stmt->bindValue(':potencia', (int)$data['potencia'], PDO::PARAM_INT);
         $stmt->bindValue(':descripcion', $data['descripcion'] ?? null, isset($data['descripcion']) && $data['descripcion'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
         $stmt->bindValue(':precio', $data['precio'], PDO::PARAM_STR);
         $stmt->bindValue(':idVehiculo', $idVehiculo, PDO::PARAM_INT);
@@ -187,7 +217,7 @@ class CocheModel
     public function obtenerCochesRecientes(int $limite = 8): array
     {
         $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.año, v.precio, v.km, 
-                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.descripcion, v.imagen
+                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.potencia, v.descripcion, v.imagen
                 FROM vehiculos v
                 INNER JOIN marcas m ON v.idMarca = m.idMarca
                 INNER JOIN modelo mo ON v.idModelo = mo.idModelo
@@ -243,7 +273,7 @@ class CocheModel
     public function buscarCoches(array $filtros = []): array
     {
         $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.año, v.precio, v.km, 
-                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.descripcion, v.imagen
+                       v.combustible, v.color, v.cambio, v.consumo, v.motor, v.potencia, v.descripcion, v.imagen
                 FROM vehiculos v
                 INNER JOIN marcas m ON v.idMarca = m.idMarca
                 INNER JOIN modelo mo ON v.idModelo = mo.idModelo
@@ -312,10 +342,10 @@ class CocheModel
     {
         $sql = "INSERT INTO vehiculos (
                     idMarca, idModelo, km, combustible, color, año, cambio,
-                    consumo, motor, descripcion, precio, imagen
+                    consumo, motor, potencia, descripcion, precio, imagen
                 ) VALUES (
                     :idMarca, :idModelo, :km, :combustible, :color, :anio, :cambio,
-                    :consumo, :motor, :descripcion, :precio, :imagen
+                    :consumo, :motor, :potencia, :descripcion, :precio, :imagen
                 )";
 
         $stmt = $this->db->prepare($sql);
@@ -329,6 +359,7 @@ class CocheModel
         $stmt->bindValue(':cambio', $data['cambio'], PDO::PARAM_STR);
         $stmt->bindValue(':consumo', $data['consumo'] !== '' ? $data['consumo'] : null, $data['consumo'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
         $stmt->bindValue(':motor', $data['motor'] ?? null, isset($data['motor']) && $data['motor'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        $stmt->bindValue(':potencia', (int)$data['potencia'], PDO::PARAM_INT);
         $stmt->bindValue(':descripcion', $data['descripcion'] ?? null, isset($data['descripcion']) && $data['descripcion'] !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
         $stmt->bindValue(':precio', $data['precio'], PDO::PARAM_STR);
         // La columna puede ser NOT NULL. Guardamos siempre un string (y luego se actualiza a la imagen principal).
