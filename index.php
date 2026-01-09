@@ -81,6 +81,10 @@ switch ($action) {
         error_log("Executing registrar case");
         $authController->registrar();
         break;
+    case 'checkEmail':
+        error_log("Executing checkEmail case");
+        $authController->checkEmail();
+        break;
     case 'logout':
         error_log("Executing logout case");
         $authController->logout();

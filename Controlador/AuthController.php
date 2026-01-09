@@ -259,6 +259,21 @@ class AuthController
         }
     }
 
+    public function checkEmail(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            $this->responderJson(['ok' => false, 'errors' => ['Método no permitido']], 405);
+        }
+
+        $correo = trim((string)($_GET['correo'] ?? ''));
+        if ($correo === '' || !filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+            $this->responderJson(['ok' => true, 'exists' => false]);
+        }
+
+        $usuario = $this->userModel->buscarPorCorreo($correo);
+        $this->responderJson(['ok' => true, 'exists' => (bool)$usuario]);
+    }
+
     public function login(): void
     {
         error_log("Login method called");

@@ -239,10 +239,11 @@
                     <label class="form-label">Correo Electrónico</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                        <input type="email" class="form-control" name="correo" 
+                        <input type="email" class="form-control" name="correo" id="correo"
                                value="<?php echo htmlspecialchars($_SESSION['datos_formulario']['correo'] ?? ''); ?>" 
                                required>
                     </div>
+                    <div class="invalid-feedback d-block" id="correoFeedback" style="display:none;"></div>
                 </div>
 
                 <div class="form-group">
@@ -311,6 +312,75 @@
 
             const registerForm = document.getElementById('registerForm');
             const ajaxErrors = document.getElementById('ajaxErrors');
+
+            const correoInput = document.getElementById('correo');
+            const correoFeedback = document.getElementById('correoFeedback');
+            let correoCheckTimer = null;
+            let lastCorreoChecked = '';
+
+            const setCorreoError = (msg) => {
+                if (correoFeedback) {
+                    correoFeedback.textContent = msg;
+                    correoFeedback.style.display = msg ? 'block' : 'none';
+                }
+                if (correoInput) {
+                    correoInput.setCustomValidity(msg ? msg : '');
+                }
+            };
+
+            const checkCorreoEnUso = async (correo) => {
+                const value = String(correo || '').trim();
+                if (!value) {
+                    setCorreoError('');
+                    return;
+                }
+
+                if (!correoInput || !correoInput.checkValidity()) {
+                    setCorreoError('');
+                    return;
+                }
+
+                lastCorreoChecked = value;
+                try {
+                    const res = await fetch(`index.php?action=checkEmail&correo=${encodeURIComponent(value)}`, {
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    const data = await res.json();
+
+                    if (String(correoInput.value || '').trim() !== value) {
+                        return;
+                    }
+
+                    if (data && data.ok && data.exists) {
+                        setCorreoError('Este correo ya está en uso');
+                    } else {
+                        setCorreoError('');
+                    }
+                } catch (e) {
+                    setCorreoError('');
+                }
+            };
+
+            if (correoInput) {
+                correoInput.addEventListener('input', function() {
+                    const value = String(this.value || '').trim();
+                    if (correoCheckTimer) clearTimeout(correoCheckTimer);
+                    correoCheckTimer = setTimeout(() => checkCorreoEnUso(value), 350);
+                });
+
+                correoInput.addEventListener('blur', function() {
+                    const value = String(this.value || '').trim();
+                    if (value && value !== lastCorreoChecked) {
+                        checkCorreoEnUso(value);
+                    }
+                });
+
+                if (String(correoInput.value || '').trim()) {
+                    checkCorreoEnUso(String(correoInput.value || '').trim());
+                }
+            }
             
             passwordInput.addEventListener('input', function() {
                 const password = this.value;
@@ -339,6 +409,11 @@
             if (registerForm) {
                 registerForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
+
+                    if (correoInput && !correoInput.checkValidity()) {
+                        correoInput.reportValidity();
+                        return;
+                    }
 
                     if (ajaxErrors) {
                         ajaxErrors.classList.add('d-none');
