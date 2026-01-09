@@ -205,6 +205,8 @@
         
         <div class="auth-right">
             <h2 class="auth-title">Crear Cuenta</h2>
+
+            <div class="alert alert-danger d-none" id="ajaxErrors"></div>
             
             <?php if (isset($_SESSION['errores'])): ?>
                 <div class="alert alert-danger">
@@ -222,7 +224,7 @@
                 <?php unset($_SESSION['mensaje']); ?>
             <?php endif; ?>
 
-            <form action="index.php?action=registrar" method="POST">
+            <form action="index.php?action=registrar" method="POST" id="registerForm">
                 <div class="form-group">
                     <label class="form-label">Nombre Completo</label>
                     <div class="input-group">
@@ -270,6 +272,17 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">Palabra clave</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-key"></i></span>
+                        <input type="text" class="form-control" name="clave"
+                               value="<?php echo htmlspecialchars($_SESSION['datos_formulario']['clave'] ?? ''); ?>"
+                               required>
+                    </div>
+                    <div class="form-text">La necesitarás para cambiar tu contraseña en el futuro.</div>
+                </div>
+
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" name="terminos" id="terminos" required>
                     <label class="form-check-label" for="terminos">
@@ -295,6 +308,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             const passwordInput = document.getElementById('contraseña');
             const passwordStrength = document.getElementById('passwordStrength');
+
+            const registerForm = document.getElementById('registerForm');
+            const ajaxErrors = document.getElementById('ajaxErrors');
             
             passwordInput.addEventListener('input', function() {
                 const password = this.value;
@@ -319,6 +335,50 @@
                 
                 passwordStrength.innerHTML = message;
             });
+
+            if (registerForm) {
+                registerForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    if (ajaxErrors) {
+                        ajaxErrors.classList.add('d-none');
+                        ajaxErrors.innerHTML = '';
+                    }
+
+                    const submitBtn = registerForm.querySelector('button[type="submit"]');
+                    const prevDisabled = submitBtn ? submitBtn.disabled : false;
+                    if (submitBtn) submitBtn.disabled = true;
+
+                    try {
+                        const formData = new FormData(registerForm);
+                        const response = await fetch(registerForm.action, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: formData
+                        });
+
+                        const data = await response.json();
+
+                        if (data && data.ok) {
+                            window.location.href = data.redirect || 'index.php?action=login';
+                            return;
+                        }
+
+                        const errors = (data && Array.isArray(data.errors)) ? data.errors : ['Error al registrarse'];
+                        if (ajaxErrors) {
+                            ajaxErrors.innerHTML = errors.map(err => `<div>${String(err)}</div>`).join('');
+                            ajaxErrors.classList.remove('d-none');
+                        }
+                    } catch (err) {
+                        if (ajaxErrors) {
+                            ajaxErrors.innerHTML = '<div>Error de conexión. Inténtalo de nuevo.</div>';
+                            ajaxErrors.classList.remove('d-none');
+                        }
+                    } finally {
+                        if (submitBtn) submitBtn.disabled = prevDisabled;
+                    }
+                });
+            }
         });
     </script>
 </body>

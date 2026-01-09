@@ -235,18 +235,18 @@
                         <h4 class="mb-4">Acciones</h4>
                         
                         <div class="d-grid gap-3">
-                            <a href="#" class="btn btn-primary-custom">
+                            <a href="index.php?action=editProfile" class="btn btn-primary-custom">
                                 <i class="fas fa-edit me-2"></i>
                                 Editar Perfil
                             </a>
                             
-                            <a href="#" class="btn btn-secondary-custom">
+                            <a href="index.php?action=changePassword" class="btn btn-secondary-custom">
                                 <i class="fas fa-key me-2"></i>
                                 Cambiar Contraseña
                             </a>
                             
                             <?php if ($usuario['isAdmin']): ?>
-                                <a href="#" class="btn btn-secondary-custom">
+                                <a href="index.php?action=admin" class="btn btn-secondary-custom">
                                     <i class="fas fa-cog me-2"></i>
                                     Panel de Administración
                                 </a>

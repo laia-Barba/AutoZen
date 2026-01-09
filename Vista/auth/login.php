@@ -194,6 +194,8 @@
         
         <div class="auth-right">
             <h2 class="auth-title">Iniciar Sesión</h2>
+
+            <div class="alert alert-danger d-none" id="ajaxErrors"></div>
             
             <?php if (isset($_SESSION['errores'])): ?>
                 <div class="alert alert-danger">
@@ -245,6 +247,7 @@
 
             <div class="auth-links">
                 <p>¿No tienes cuenta? <a href="index.php?action=registro">Regístrate aquí</a></p>
+                <p><a href="index.php?action=forgotPassword">¿Olvidaste tu contraseña?</a></p>
                 <p><a href="index.php">Volver al inicio</a></p>
             </div>
         </div>
@@ -254,22 +257,48 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
+            const ajaxErrors = document.getElementById('ajaxErrors');
             
             if (loginForm) {
-                loginForm.addEventListener('submit', function(e) {
-                    console.log('🔐 Login form submitting...');
-                    console.log('📧 Email:', this.correo.value);
-                    console.log('🔑 Password length:', this.contraseña.value.length);
-                    
-                    // Log form data
-                    const formData = new FormData(this);
-                    console.log('📋 Form data:');
-                    for (let [key, value] of formData.entries()) {
-                        if (key === 'contraseña') {
-                            console.log(key + ': [HIDDEN - ' + value.length + ' chars]');
-                        } else {
-                            console.log(key + ':', value);
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    if (ajaxErrors) {
+                        ajaxErrors.classList.add('d-none');
+                        ajaxErrors.innerHTML = '';
+                    }
+
+                    const submitBtn = loginForm.querySelector('button[type="submit"]');
+                    const prevDisabled = submitBtn ? submitBtn.disabled : false;
+                    if (submitBtn) submitBtn.disabled = true;
+
+                    try {
+                        const formData = new FormData(loginForm);
+                        const response = await fetch(loginForm.action, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: formData
+                        });
+
+                        const data = await response.json();
+
+                        if (data && data.ok) {
+                            window.location.href = data.redirect || 'index.php';
+                            return;
                         }
+
+                        const errors = (data && Array.isArray(data.errors)) ? data.errors : ['Error al iniciar sesión'];
+                        if (ajaxErrors) {
+                            ajaxErrors.innerHTML = errors.map(err => `<div>${String(err)}</div>`).join('');
+                            ajaxErrors.classList.remove('d-none');
+                        }
+                    } catch (err) {
+                        if (ajaxErrors) {
+                            ajaxErrors.innerHTML = '<div>Error de conexión. Inténtalo de nuevo.</div>';
+                            ajaxErrors.classList.remove('d-none');
+                        }
+                    } finally {
+                        if (submitBtn) submitBtn.disabled = prevDisabled;
                     }
                 });
             }

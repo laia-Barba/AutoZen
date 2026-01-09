@@ -57,6 +57,22 @@ switch ($action) {
             $authController->mostrarLogin();
         }
         break;
+    case 'forgotPassword':
+        error_log("Executing forgotPassword case");
+        $authController->mostrarRecuperarContrasenaPaso1();
+        break;
+    case 'forgotPasswordValidate':
+        error_log("Executing forgotPasswordValidate case");
+        $authController->validarClaveRecuperarContrasena();
+        break;
+    case 'forgotPasswordNew':
+        error_log("Executing forgotPasswordNew case");
+        $authController->mostrarRecuperarContrasenaPaso2();
+        break;
+    case 'forgotPasswordSave':
+        error_log("Executing forgotPasswordSave case");
+        $authController->guardarRecuperarContrasena();
+        break;
     case 'registro':
         error_log("Executing registro case");
         $authController->mostrarRegistro();
@@ -72,6 +88,30 @@ switch ($action) {
     case 'perfil':
         error_log("Executing perfil case");
         $authController->mostrarPerfil();
+        break;
+    case 'editProfile':
+        error_log("Executing editProfile case");
+        $authController->mostrarEditarPerfil();
+        break;
+    case 'saveProfile':
+        error_log("Executing saveProfile case");
+        $authController->guardarEditarPerfil();
+        break;
+    case 'changePassword':
+        error_log("Executing changePassword case");
+        $authController->mostrarCambioContrasenaPaso1();
+        break;
+    case 'validatePasswordKey':
+        error_log("Executing validatePasswordKey case");
+        $authController->validarClaveCambioContrasena();
+        break;
+    case 'changePasswordNew':
+        error_log("Executing changePasswordNew case");
+        $authController->mostrarCambioContrasenaPaso2();
+        break;
+    case 'changePasswordSave':
+        error_log("Executing changePasswordSave case");
+        $authController->guardarNuevaContrasena();
         break;
     case 'admin':
         error_log("Executing admin case");
