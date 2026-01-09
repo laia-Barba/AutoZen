@@ -117,6 +117,18 @@ switch ($action) {
         error_log("Executing admin case");
         $adminController->dashboard();
         break;
+    case 'manageUsers':
+        error_log("Executing manageUsers case");
+        $adminController->manageUsers();
+        break;
+    case 'toggleUserAdmin':
+        error_log("Executing toggleUserAdmin case");
+        $adminController->toggleUserAdmin();
+        break;
+    case 'deleteUser':
+        error_log("Executing deleteUser case");
+        $adminController->deleteUser();
+        break;
     case 'addCar':
         error_log("Executing addCar case");
         $adminController->addCar();

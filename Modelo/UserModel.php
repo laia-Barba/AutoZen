@@ -175,4 +175,40 @@ class UserModel
         
         return $stmt->execute();
     }
+
+    public function listarUsuariosAdmin(): array
+    {
+        $sql = "SELECT idUsuario, Nombre, Correo, Telefono, isAdmin FROM usuarios ORDER BY idUsuario DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $rows ?: [];
+    }
+
+    public function contarUsuarios(): int
+    {
+        $sql = "SELECT COUNT(*) AS total FROM usuarios";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row && isset($row['total']) ? (int)$row['total'] : 0;
+    }
+
+    public function actualizarRolAdmin(int $idUsuario, int $isAdmin): bool
+    {
+        $sql = "UPDATE usuarios SET isAdmin = :isAdmin WHERE idUsuario = :idUsuario";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':idUsuario', $idUsuario, PDO::PARAM_INT);
+        $stmt->bindParam(':isAdmin', $isAdmin, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    public function eliminarUsuarioPorId(int $idUsuario): bool
+    {
+        $sql = "DELETE FROM usuarios WHERE idUsuario = :idUsuario";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':idUsuario', $idUsuario, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }

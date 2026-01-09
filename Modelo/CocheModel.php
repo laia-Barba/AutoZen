@@ -30,6 +30,15 @@ class CocheModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function contarVehiculos(): int
+    {
+        $sql = "SELECT COUNT(*) AS total FROM vehiculos";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row && isset($row['total']) ? (int)$row['total'] : 0;
+    }
+
     public function obtenerVehiculoDetalle(int $idVehiculo): ?array
     {
         $sql = "SELECT v.idVehiculo, m.Nombre as marca, mo.Nombre as modelo, v.año, v.precio, v.km,

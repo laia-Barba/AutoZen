@@ -3,16 +3,19 @@ namespace Controlador;
 
 use Controlador\AuthController;
 use Modelo\CocheModel;
+use Modelo\UserModel;
 
 class AdminController
 {
     private AuthController $authController;
     private CocheModel $cocheModel;
+    private UserModel $userModel;
 
     public function __construct()
     {
         $this->authController = new AuthController();
         $this->cocheModel = new CocheModel();
+        $this->userModel = new UserModel();
     }
 
     public function dashboard(): void
@@ -27,8 +30,103 @@ class AdminController
         $usuarioActual = $this->authController->getUsuarioActual();
         $esAdmin = $this->authController->esAdmin();
 
+        $totalUsuarios = $this->userModel->contarUsuarios();
+        $totalCoches = $this->cocheModel->contarVehiculos();
+
         // Load the admin dashboard view
         require_once __DIR__ . '/../Vista/admin/dashboard_simple.php';
+    }
+
+    public function manageUsers(): void
+    {
+        if (!$this->authController->estaLogueado() || !$this->authController->esAdmin()) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        $usuarioActual = $this->authController->getUsuarioActual();
+        $esAdmin = true;
+
+        $usuarios = $this->userModel->listarUsuariosAdmin();
+        require_once __DIR__ . '/../Vista/admin/manage_users.php';
+    }
+
+    public function toggleUserAdmin(): void
+    {
+        if (!$this->authController->estaLogueado() || !$this->authController->esAdmin()) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?action=manageUsers');
+            exit;
+        }
+
+        $idUsuario = (int)($_POST['idUsuario'] ?? 0);
+        $isAdmin = (int)($_POST['isAdmin'] ?? 0);
+
+        if ($idUsuario <= 0) {
+            $_SESSION['errores'] = ['Usuario inválido'];
+            header('Location: index.php?action=manageUsers');
+            exit;
+        }
+
+        $idActual = (int)($this->authController->getUsuarioActual()['idUsuario'] ?? 0);
+        if ($idActual > 0 && $idUsuario === $idActual && $isAdmin === 0) {
+            $_SESSION['errores'] = ['No puedes quitarte el rol de administrador a ti mismo'];
+            header('Location: index.php?action=manageUsers');
+            exit;
+        }
+
+        $ok = $this->userModel->actualizarRolAdmin($idUsuario, $isAdmin ? 1 : 0);
+        if ($ok) {
+            $_SESSION['mensaje'] = 'Rol actualizado correctamente.';
+            header('Location: index.php?action=manageUsers');
+            exit;
+        }
+
+        $_SESSION['errores'] = ['No se pudo actualizar el rol del usuario'];
+        header('Location: index.php?action=manageUsers');
+        exit;
+    }
+
+    public function deleteUser(): void
+    {
+        if (!$this->authController->estaLogueado() || !$this->authController->esAdmin()) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?action=manageUsers');
+            exit;
+        }
+
+        $idUsuario = (int)($_POST['idUsuario'] ?? 0);
+        if ($idUsuario <= 0) {
+            $_SESSION['errores'] = ['Usuario inválido'];
+            header('Location: index.php?action=manageUsers');
+            exit;
+        }
+
+        $idActual = (int)($this->authController->getUsuarioActual()['idUsuario'] ?? 0);
+        if ($idActual > 0 && $idUsuario === $idActual) {
+            $_SESSION['errores'] = ['No puedes borrar tu propio usuario'];
+            header('Location: index.php?action=manageUsers');
+            exit;
+        }
+
+        $ok = $this->userModel->eliminarUsuarioPorId($idUsuario);
+        if ($ok) {
+            $_SESSION['mensaje'] = 'Usuario eliminado correctamente.';
+            header('Location: index.php?action=manageUsers');
+            exit;
+        }
+
+        $_SESSION['errores'] = ['No se pudo eliminar el usuario'];
+        header('Location: index.php?action=manageUsers');
+        exit;
     }
 
     public function addCar(): void

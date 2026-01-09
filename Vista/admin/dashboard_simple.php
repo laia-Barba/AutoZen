@@ -199,7 +199,7 @@
                     <div class="admin-description">Edita y elimina coches existentes</div>
                 </a>
 
-                <a href="#" class="admin-card">
+                <a href="index.php?action=manageUsers" class="admin-card">
                     <div class="admin-icon">
                         <i class="fas fa-users"></i>
                     </div>
@@ -214,14 +214,14 @@
                     <div class="stat-icon">
                         <i class="fas fa-car"></i>
                     </div>
-                    <div class="stat-number">24</div>
+                    <div class="stat-number"><?php echo isset($totalCoches) ? (int)$totalCoches : 0; ?></div>
                     <div class="stat-label">Total Coches</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">
                         <i class="fas fa-users"></i>
                     </div>
-                    <div class="stat-number">156</div>
+                    <div class="stat-number"><?php echo isset($totalUsuarios) ? (int)$totalUsuarios : 0; ?></div>
                     <div class="stat-label">Usuarios</div>
                 </div>
                 <div class="stat-card">
