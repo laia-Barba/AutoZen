@@ -17,6 +17,7 @@
         .spec-pill i { color: var(--primary-color); }
         .btn-primary-custom { background: var(--primary-color); border: none; color:#fff; font-weight:700; padding: 12px 18px; border-radius: 12px; text-decoration:none; display:inline-block; }
         .btn-primary-custom:hover { background:#f35a22; color:#fff; text-decoration:none; }
+        .btn-admin-secondary { border-radius: 12px; font-weight: 700; padding: 12px 18px; }
         .thumbs { display:flex; gap:10px; overflow:auto; padding-bottom:6px; }
         .thumb { width: 90px; height: 64px; border-radius: 10px; background:#f1f3f5; overflow:hidden; flex: 0 0 auto; cursor:pointer; border: 2px solid transparent; }
         .thumb img { width:100%; height:100%; object-fit:contain; background:#fff; }
@@ -129,6 +130,21 @@
                     <a class="btn-primary-custom w-100 text-center" href="index.php?action=buscar">
                         <i class="fas fa-car me-2"></i>Ver más coches
                     </a>
+
+                    <?php if (isset($esAdmin) && $esAdmin): ?>
+                        <div class="mt-3 d-grid gap-2">
+                            <a class="btn btn-outline-primary btn-admin-secondary w-100" href="index.php?action=editCar&id=<?php echo (int)($vehiculo['idVehiculo'] ?? 0); ?>">
+                                <i class="fas fa-edit me-2"></i>Editar coche
+                            </a>
+
+                            <form method="POST" action="index.php?action=deleteCar" onsubmit="return confirm('¿Seguro que quieres eliminar este coche?');">
+                                <input type="hidden" name="idVehiculo" value="<?php echo (int)($vehiculo['idVehiculo'] ?? 0); ?>">
+                                <button type="submit" class="btn btn-outline-danger btn-admin-secondary w-100">
+                                    <i class="fas fa-trash me-2"></i>Eliminar coche
+                                </button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

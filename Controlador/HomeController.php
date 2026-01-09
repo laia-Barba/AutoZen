@@ -143,9 +143,31 @@ class HomeController
                         <div class="car-card">
                             <div class="car-image-container">
                                 <?php
-                                    $img = isset($coche['imagen']) && $coche['imagen']
+                                    $imgPath = isset($coche['imagen']) && $coche['imagen']
                                         ? $coche['imagen']
                                         : 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=' . urlencode($coche['marca'] . ' ' . $coche['modelo']);
+
+                                    // Normalizar a ruta web (la BD puede guardar rutas tipo C:\xampp\htdocs\...)
+                                    if (strpos($imgPath, 'http') === 0) {
+                                        $img = $imgPath;
+                                    } else {
+                                        $p = str_replace('\\', '/', (string)$imgPath);
+
+                                        if (($pos = stripos($p, '/htdocs/')) !== false) {
+                                            $rel = substr($p, $pos + strlen('/htdocs/'));
+                                            $img = '/' . ltrim($rel, '/');
+                                        } elseif (($pos = stripos($p, '/AutoZen/')) !== false) {
+                                            $rel = substr($p, $pos);
+                                            $img = $rel;
+                                        } else {
+                                            $img = '/' . ltrim($p, '/');
+                                        }
+
+                                        $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+                                        if ($base && strpos($img, $base) !== 0) {
+                                            $img = $base . $img;
+                                        }
+                                    }
                                 ?>
                                 <img src="<?php echo htmlspecialchars($img); ?>" 
                                      alt="<?php echo htmlspecialchars($coche['marca'] . ' ' . $coche['modelo']); ?>" 

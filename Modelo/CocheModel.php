@@ -264,7 +264,7 @@ class CocheModel
         $sql = "SELECT 
                     COUNT(*) as total_coches,
                     (SELECT COUNT(*) FROM marcas) as total_marcas,
-                    AVG(precio) as precio_promedio
+                    AVG(CAST(precio AS DECIMAL(12,2))) as precio_promedio
                 FROM vehiculos";
         
         $stmt = $this->db->prepare($sql);
@@ -275,7 +275,7 @@ class CocheModel
         return [
             'total_coches' => (int)$result['total_coches'],
             'total_marcas' => (int)$result['total_marcas'],
-            'precio_promedio' => (float)$result['precio_promedio']
+            'precio_promedio' => isset($result['precio_promedio']) && $result['precio_promedio'] !== null ? (float)$result['precio_promedio'] : 0.0
         ];
     }
 

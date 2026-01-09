@@ -80,6 +80,14 @@
             width: 100%;
         }
 
+        .nav-link.active {
+            color: var(--primary-color) !important;
+        }
+
+        .nav-link.active::after {
+            width: 100%;
+        }
+
         /* User Menu Styles */
         .user-menu-container {
             position: relative;
@@ -479,6 +487,7 @@
     </style>
 </head>
 <body>
+    <?php $currentAction = $_GET['action'] ?? 'index'; ?>
     <!-- Navegación -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
@@ -491,16 +500,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#inicio">Inicio</a>
+                        <a class="nav-link <?php echo $currentAction === 'index' ? 'active' : ''; ?>" href="#inicio">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php?action=buscar">Coches</a>
+                        <a class="nav-link <?php echo $currentAction === 'buscar' ? 'active' : ''; ?>" href="index.php?action=buscar">Coches</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#destacados">Destacados</a>
+                        <a class="nav-link" href="#destacados" data-section="destacados">Destacados</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#contacto">Contacto</a>
+                        <a class="nav-link" href="#contacto" data-section="contacto">Contacto</a>
                     </li>
                     
                     <li class="nav-item">
@@ -818,15 +827,58 @@
                     }
                 });
                 
-                /* Log popup action clicks
-                const popupActions = userPopup.querySelectorAll('.popup-action');
-                popupActions.forEach(action => {
-                    action.addEventListener('click', function() {
-                        const actionText = this.querySelector('span').textContent;
-                        console.log('🎯 Popup action clicked:', actionText);
-                    });
-                }); */
-                
+                const navLinks = document.querySelectorAll('.navbar .nav-link');
+                const sectionLinks = document.querySelectorAll('.navbar .nav-link[data-section]');
+                const inicioLink = document.querySelector('.navbar .nav-link[href="#inicio"]');
+
+                const setActiveNav = (link) => {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    if (link) link.classList.add('active');
+                };
+
+                const applyActiveForSection = (sectionId) => {
+                    const link = document.querySelector(`.navbar .nav-link[href="#${sectionId}"]`);
+                    if (link) setActiveNav(link);
+                };
+
+                const applyFromHash = () => {
+                    const hash = (window.location.hash || '').replace('#', '');
+                    if (hash === 'destacados' || hash === 'contacto' || hash === 'inicio') {
+                        applyActiveForSection(hash);
+                        return true;
+                    }
+                    return false;
+                };
+
+                if (!applyFromHash() && inicioLink) {
+                    setActiveNav(inicioLink);
+                }
+
+                window.addEventListener('hashchange', () => {
+                    applyFromHash();
+                });
+
+                sectionLinks.forEach(link => {
+                    link.addEventListener('mouseenter', () => setActiveNav(link));
+                    link.addEventListener('click', () => setActiveNav(link));
+                });
+
+                const sectionsToWatch = ['inicio', 'destacados', 'contacto']
+                    .map(id => document.getElementById(id))
+                    .filter(Boolean);
+
+                if (sectionsToWatch.length) {
+                    const observer = new IntersectionObserver((entries) => {
+                        const visible = entries
+                            .filter(e => e.isIntersecting)
+                            .sort((a, b) => (b.intersectionRatio || 0) - (a.intersectionRatio || 0))[0];
+                        if (visible && visible.target && visible.target.id) {
+                            applyActiveForSection(visible.target.id);
+                        }
+                    }, { root: null, threshold: [0.25, 0.5, 0.75] });
+
+                    sectionsToWatch.forEach(s => observer.observe(s));
+                }
             } else {
                 console.error('❌ User menu elements not found');
             }

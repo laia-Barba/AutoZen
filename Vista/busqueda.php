@@ -56,10 +56,34 @@
             font-weight: 500;
             margin: 0 0.5rem;
             transition: all 0.3s ease;
+            position: relative;
         }
 
         .nav-link:hover {
             color: var(--primary-color) !important;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--gradient-2);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .nav-link.active {
+            color: var(--primary-color) !important;
+        }
+
+        .nav-link.active::after {
+            width: 100%;
         }
 
         /* User Menu Styles */
@@ -403,6 +427,7 @@
     </style>
 </head>
 <body>
+    <?php $currentAction = $_GET['action'] ?? 'index'; ?>
     <!-- Navegación -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
@@ -415,16 +440,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php">Inicio</a>
+                        <a class="nav-link <?php echo $currentAction === 'index' ? 'active' : ''; ?>" href="index.php">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php?action=buscar">Coches</a>
+                        <a class="nav-link <?php echo $currentAction === 'buscar' ? 'active' : ''; ?>" href="index.php?action=buscar">Coches</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#destacados">Destacados</a>
+                        <a class="nav-link" href="index.php#destacados">Destacados</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#contacto">Contacto</a>
+                        <a class="nav-link" href="index.php#contacto">Contacto</a>
                     </li>
                     
                     <li class="nav-item">
