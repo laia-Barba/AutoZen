@@ -575,6 +575,7 @@
                                     <option value="Gasolina" <?php echo (isset($_GET['combustible']) && $_GET['combustible'] == 'Gasolina') ? 'selected' : ''; ?>>Gasolina</option>
                                     <option value="Diesel" <?php echo (isset($_GET['combustible']) && $_GET['combustible'] == 'Diesel') ? 'selected' : ''; ?>>Diesel</option>
                                     <option value="Eléctrico" <?php echo (isset($_GET['combustible']) && $_GET['combustible'] == 'Eléctrico') ? 'selected' : ''; ?>>Eléctrico</option>
+                                    <option value="Híbrido" <?php echo (isset($_GET['combustible']) && $_GET['combustible'] == 'Híbrido') ? 'selected' : ''; ?>>Híbrido</option>
                                 </select>
                             </div>
 

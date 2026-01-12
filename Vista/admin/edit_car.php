@@ -87,7 +87,7 @@
                         <label class="form-label">Combustible</label>
                         <select name="combustible" class="form-select" required>
                             <option value="">Seleccione</option>
-                            <?php foreach (['Gasolina','Diesel','Eléctrico'] as $c): ?>
+                            <?php foreach (['Gasolina','Diesel','Eléctrico','Híbrido'] as $c): ?>
                                 <option value="<?php echo $c; ?>" <?php echo (($vehiculo['combustible'] ?? '')==$c)?'selected':''; ?>><?php echo $c; ?></option>
                             <?php endforeach; ?>
                         </select>
