@@ -547,12 +547,18 @@ class AuthController
         exit;
     }
 
+    /**
+     * Maneja las peticiones AJAX para añadir vehículos al carrito
+     * Verifica que el usuario esté logueado y añade el vehículo a la base de datos
+     */
     public function cartAdd(): void
     {
+        // Verificar que sea una petición POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->responderJson(['ok' => false, 'errors' => ['Método no permitido']], 405);
         }
 
+        // Verificar que el usuario esté logueado
         if (!$this->estaLogueado()) {
             $this->responderJson([
                 'ok' => false,
@@ -560,39 +566,49 @@ class AuthController
             ], 401);
         }
 
+        // Validar ID del vehículo
         $idVehiculo = (int)($_POST['idVehiculo'] ?? 0);
         if ($idVehiculo <= 0) {
             $this->responderJson(['ok' => false, 'errors' => ['Vehículo inválido']], 422);
         }
 
+        // Validar ID del usuario desde la sesión
         $idUsuario = (int)($_SESSION['usuario']['idUsuario'] ?? 0);
         if ($idUsuario <= 0) {
             $this->responderJson(['ok' => false, 'errors' => ['Usuario inválido']], 422);
         }
 
-        // Verificar si ya está en el carrito
+        // Verificar si el vehículo ya está en el carrito para evitar duplicados
         if ($this->carritoModel->yaEstaEnCarrito($idUsuario, $idVehiculo)) {
             $this->responderJson(['ok' => false, 'errors' => ['El vehículo ya está en tu carrito']], 422);
         }
 
-        // Agregar a la base de datos
+        // Intentar agregar el vehículo a la base de datos
         if ($this->carritoModel->agregarAlCarrito($idUsuario, $idVehiculo)) {
+            // Si éxito, obtener el nuevo total y responder
             $count = $this->carritoModel->contarVehiculosCarrito($idUsuario);
             $this->responderJson([
                 'ok' => true,
-                'count' => $count,
+                'count' => $count, // Nuevo total para actualizar el badge
             ]);
         } else {
+            // Si error, responder con mensaje de error
             $this->responderJson(['ok' => false, 'errors' => ['No se pudo añadir el vehículo al carrito']], 500);
         }
     }
 
+    /**
+     * Maneja las peticiones AJAX para reservar un vehículo del carrito
+     * Cambia el estado 'reservado' de FALSE a TRUE en la base de datos
+     */
     public function reservarVehiculo(): void
     {
+        // Verificar que sea una petición POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->responderJson(['ok' => false, 'errors' => ['Método no permitido']], 405);
         }
 
+        // Verificar que el usuario esté logueado
         if (!$this->estaLogueado()) {
             $this->responderJson([
                 'ok' => false,
@@ -600,22 +616,24 @@ class AuthController
             ], 401);
         }
 
+        // Validar ID del vehículo
         $idVehiculo = (int)($_POST['idVehiculo'] ?? 0);
         if ($idVehiculo <= 0) {
             $this->responderJson(['ok' => false, 'errors' => ['Vehículo inválido']], 422);
         }
 
+        // Validar ID del usuario desde la sesión
         $idUsuario = (int)($_SESSION['usuario']['idUsuario'] ?? 0);
         if ($idUsuario <= 0) {
             $this->responderJson(['ok' => false, 'errors' => ['Usuario inválido']], 422);
         }
 
-        // Verificar que el vehículo está en el carrito del usuario
+        // Verificar que el vehículo esté en el carrito del usuario (seguridad)
         if (!$this->carritoModel->yaEstaEnCarrito($idUsuario, $idVehiculo)) {
             $this->responderJson(['ok' => false, 'errors' => ['El vehículo no está en tu carrito']], 422);
         }
 
-        // Reservar el vehículo
+        // Intentar reservar el vehículo
         if ($this->carritoModel->reservarVehiculo($idUsuario, $idVehiculo)) {
             $this->responderJson([
                 'ok' => true,

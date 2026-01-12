@@ -1,181 +1,188 @@
 <?php
+// Iniciar la sesión para poder usar variables de sesión
 session_start();
 
-// Enable error logging for debugging
-error_log("=== New Request ===");
-error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
-error_log("Request URI: " . $_SERVER['REQUEST_URI']);
-error_log("Action parameter: " . ($_GET['action'] ?? 'not set'));
+// Activar logging de errores para depuración
+error_log("=== Nueva Petición ===");
+error_log("Método de la petición: " . $_SERVER['REQUEST_METHOD']);
+error_log("URI de la petición: " . $_SERVER['REQUEST_URI']);
+error_log("Parámetro action: " . ($_GET['action'] ?? 'no definido'));
 
-require_once 'app/Core/Database.php';
-require_once 'Modelo/CocheModel.php';
-require_once 'Modelo/UserModel.php';
-require_once 'Modelo/CarritoModel.php';
-require_once 'Controlador/HomeController.php';
-require_once 'Controlador/AuthController.php';
-require_once 'Controlador/AdminController.php';
+// Incluir los archivos necesarios para el funcionamiento
+require_once 'app/Core/Database.php';          // Conexión a la base de datos
+require_once 'Modelo/CocheModel.php';         // Modelo para gestionar vehículos
+require_once 'Modelo/UserModel.php';          // Modelo para gestionar usuarios
+require_once 'Modelo/CarritoModel.php';       // Modelo para gestionar el carrito
+require_once 'Controlador/HomeController.php';   // Controlador principal de la web
+require_once 'Controlador/AuthController.php';    // Controlador de autenticación
+require_once 'Controlador/AdminController.php';   // Controlador de administración
 
+// Usar los namespaces de los controladores
 use Controlador\HomeController;
 use Controlador\AuthController;
 use Controlador\AdminController;
 
+// Obtener la acción a ejecutar desde la URL, por defecto 'index'
 $action = $_GET['action'] ?? 'index';
 
-error_log("Processing action: " . $action);
+error_log("Procesando acción: " . $action);
 
-$homeController = new HomeController();
-$authController = new AuthController();
-$adminController = new AdminController();
+// Crear instancias de los controladores
+$homeController = new HomeController();    // Controlador para páginas públicas
+$authController = new AuthController();     // Controlador para login/registro/perfil
+$adminController = new AdminController();   // Controlador para administración
 
+// Router principal: determina qué controlador y método ejecutar según la acción
 switch ($action) {
     case 'index':
-        error_log("Executing index case");
-        $homeController->index();
+        error_log("Ejecutando caso: index");
+        $homeController->index();           // Página principal
         break;
     case 'buscar':
-        error_log("Executing buscar case");
-        $homeController->buscar();
+        error_log("Ejecutando caso: buscar");
+        $homeController->buscar();           // Página de búsqueda de vehículos
         break;
     case 'detalle':
-        error_log("Executing detalle case");
-        $homeController->detalle();
+        error_log("Ejecutando caso: detalle");
+        $homeController->detalle();          // Página de detalles de un vehículo
         break;
     case 'getModelos':
-        error_log("Executing getModelos case");
-        $homeController->getModelos();
+        error_log("Ejecutando caso: getModelos");
+        $homeController->getModelos();       // AJAX: obtener modelos de una marca
         break;
     case 'getModelos':
-        error_log("Executing getModelos case");
-        $homeController->getModelos();
+        error_log("Ejecutando caso: getModelos");
+        $homeController->getModelos();       // AJAX: obtener modelos de una marca (duplicado)
         break;
     case 'login':
-        error_log("Executing login case");
+        error_log("Ejecutando caso: login");
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            error_log("POST request - calling login method");
-            $authController->login();
+            error_log("Petición POST - llamando al método login");
+            $authController->login();       // Procesar formulario de login
         } else {
-            error_log("GET request - calling mostrarLogin method");
-            $authController->mostrarLogin();
+            error_log("Petición GET - mostrando formulario de login");
+            $authController->mostrarLogin(); // Mostrar página de login
         }
         break;
     case 'forgotPassword':
-        error_log("Executing forgotPassword case");
-        $authController->mostrarRecuperarContrasenaPaso1();
+        error_log("Ejecutando caso: forgotPassword");
+        $authController->mostrarRecuperarContrasenaPaso1(); // Paso 1 recuperación contraseña
         break;
     case 'forgotPasswordValidate':
-        error_log("Executing forgotPasswordValidate case");
-        $authController->validarClaveRecuperarContrasena();
+        error_log("Ejecutando caso: forgotPasswordValidate");
+        $authController->validarClaveRecuperarContrasena(); // Validar email recuperación
         break;
     case 'forgotPasswordNew':
-        error_log("Executing forgotPasswordNew case");
-        $authController->mostrarRecuperarContrasenaPaso2();
+        error_log("Ejecutando caso: forgotPasswordNew");
+        $authController->mostrarRecuperarContrasenaPaso2(); // Paso 2 recuperación contraseña
         break;
     case 'forgotPasswordSave':
-        error_log("Executing forgotPasswordSave case");
-        $authController->guardarRecuperarContrasena();
+        error_log("Ejecutando caso: forgotPasswordSave");
+        $authController->guardarRecuperarContrasena(); // Guardar nueva contraseña
         break;
     case 'registro':
-        error_log("Executing registro case");
-        $authController->mostrarRegistro();
+        error_log("Ejecutando caso: registro");
+        $authController->mostrarRegistro(); // Mostrar formulario de registro
         break;
     case 'registrar':
-        error_log("Executing registrar case");
-        $authController->registrar();
+        error_log("Ejecutando caso: registrar");
+        $authController->registrar(); // Procesar formulario de registro
         break;
     case 'checkEmail':
-        error_log("Executing checkEmail case");
-        $authController->checkEmail();
+        error_log("Ejecutando caso: checkEmail");
+        $authController->checkEmail(); // AJAX: verificar si email existe
         break;
     case 'logout':
-        error_log("Executing logout case");
-        $authController->logout();
+        error_log("Ejecutando caso: logout");
+        $authController->logout(); // Cerrar sesión
         break;
     case 'perfil':
-        error_log("Executing perfil case");
-        $authController->mostrarPerfil();
+        error_log("Ejecutando caso: perfil");
+        $authController->mostrarPerfil(); // Mostrar perfil de usuario
         break;
     case 'editProfile':
-        error_log("Executing editProfile case");
-        $authController->mostrarEditarPerfil();
+        error_log("Ejecutando caso: editProfile");
+        $authController->mostrarEditarPerfil(); // Mostrar formulario editar perfil
         break;
     case 'saveProfile':
-        error_log("Executing saveProfile case");
-        $authController->guardarEditarPerfil();
+        error_log("Ejecutando caso: saveProfile");
+        $authController->guardarEditarPerfil(); // Guardar cambios del perfil
         break;
     case 'carrito':
-        error_log("Executing carrito case");
-        $authController->mostrarCarrito();
+        error_log("Ejecutando caso: carrito");
+        $authController->mostrarCarrito(); // Mostrar página del carrito
         break;
     case 'carritoSave':
-        error_log("Executing carritoSave case");
-        $authController->guardarCarrito();
+        error_log("Ejecutando caso: carritoSave");
+        $authController->guardarCarrito(); // Guardar datos de contacto del carrito
         break;
     case 'cartAdd':
-        error_log("Executing cartAdd case");
-        $authController->cartAdd();
+        error_log("Ejecutando caso: cartAdd");
+        $authController->cartAdd(); // AJAX: añadir vehículo al carrito
         break;
     case 'reservarVehiculo':
-        error_log("Executing reservarVehiculo case");
-        $authController->reservarVehiculo();
+        error_log("Ejecutando caso: reservarVehiculo");
+        $authController->reservarVehiculo(); // AJAX: reservar vehículo
         break;
     case 'cancelarReserva':
-        error_log("Executing cancelarReserva case");
-        $authController->cancelarReserva();
+        error_log("Ejecutando caso: cancelarReserva");
+        $authController->cancelarReserva(); // AJAX: cancelar reserva
         break;
     case 'eliminarDelCarrito':
-        error_log("Executing eliminarDelCarrito case");
-        $authController->eliminarDelCarrito();
+        error_log("Ejecutando caso: eliminarDelCarrito");
+        $authController->eliminarDelCarrito(); // AJAX: eliminar vehículo del carrito
         break;
     case 'changePassword':
-        error_log("Executing changePassword case");
-        $authController->mostrarCambioContrasenaPaso1();
+        error_log("Ejecutando caso: changePassword");
+        $authController->mostrarCambioContrasenaPaso1(); // Paso 1 cambio contraseña
         break;
     case 'validatePasswordKey':
-        error_log("Executing validatePasswordKey case");
-        $authController->validarClaveCambioContrasena();
+        error_log("Ejecutando caso: validatePasswordKey");
+        $authController->validarClaveCambioContrasena(); // Validar clave cambio
         break;
     case 'changePasswordNew':
-        error_log("Executing changePasswordNew case");
-        $authController->mostrarCambioContrasenaPaso2();
+        error_log("Ejecutando caso: changePasswordNew");
+        $authController->mostrarCambioContrasenaPaso2(); // Paso 2 cambio contraseña
         break;
     case 'changePasswordSave':
-        error_log("Executing changePasswordSave case");
-        $authController->guardarNuevaContrasena();
+        error_log("Ejecutando caso: changePasswordSave");
+        $authController->guardarNuevaContrasena(); // Guardar nueva contraseña
         break;
     case 'admin':
-        error_log("Executing admin case");
-        $adminController->dashboard();
+        error_log("Ejecutando caso: admin");
+        $adminController->dashboard(); // Panel de administración
         break;
     case 'manageUsers':
-        error_log("Executing manageUsers case");
-        $adminController->manageUsers();
+        error_log("Ejecutando caso: manageUsers");
+        $adminController->manageUsers(); // Gestionar usuarios
         break;
     case 'toggleUserAdmin':
-        error_log("Executing toggleUserAdmin case");
-        $adminController->toggleUserAdmin();
+        error_log("Ejecutando caso: toggleUserAdmin");
+        $adminController->toggleUserAdmin(); // Cambiar rol admin a usuario
         break;
     case 'deleteUser':
-        error_log("Executing deleteUser case");
-        $adminController->deleteUser();
+        error_log("Ejecutando caso: deleteUser");
+        $adminController->deleteUser(); // Eliminar usuario
         break;
     case 'addCar':
-        error_log("Executing addCar case");
-        $adminController->addCar();
+        error_log("Ejecutando caso: addCar");
+        $adminController->addCar(); // Añadir nuevo vehículo
         break;
     case 'manageCars':
-        error_log("Executing manageCars case");
-        $adminController->manageCars();
+        error_log("Ejecutando caso: manageCars");
+        $adminController->manageCars(); // Gestionar vehículos
         break;
     case 'deleteCar':
-        error_log("Executing deleteCar case");
-        $adminController->deleteCar();
+        error_log("Ejecutando caso: deleteCar");
+        $adminController->deleteCar(); // Eliminar vehículo
         break;
     case 'editCar':
-        error_log("Executing editCar case");
-        $adminController->editCar();
+        error_log("Ejecutando caso: editCar");
+        $adminController->editCar(); // Editar vehículo
         break;
     default:
-        error_log("Executing default case");
-        $homeController->index();
-        break;
+        error_log("Acción no reconocida: " . $action);
+        // Si la acción no existe, redirigir a la página principal
+        header('Location: index.php');
+        exit;
 }
