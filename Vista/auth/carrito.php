@@ -23,7 +23,7 @@
         }
 
         .page-wrap {
-            padding: 100px 0 40px;
+            padding: 80px 20px 40px;
         }
 
         .card-soft {
@@ -186,9 +186,9 @@
         ?? ($_SESSION['usuario']['Telefono'] ?? ($usuario['Telefono'] ?? ''));
 ?>
 
-<div class="container page-wrap">
+<div class="container-fluid page-wrap">
     <div class="row justify-content-center">
-        <div class="col-lg-7">
+        <div class="col-12 col-lg-10 col-xl-8">
             <?php if (!empty($_SESSION['errores'])): ?>
                 <div class="alert alert-danger">
                     <?php foreach ($_SESSION['errores'] as $e): ?>
@@ -249,8 +249,8 @@
                             <div class="list-group">
                                 <div class="row">
                                     <?php foreach ($vehiculosCarrito as $v): 
-                                        $imagen = !empty($v['imagen']) ? $v['imagen'] : 'assets/img/vehicle-placeholder.jpg';
-                                        $reservado = isset($v['reservado']) && $v['reservado'] === true;
+                                        $imagen = !empty($v['imagen']) ? 'uploads/vehiculos/' . basename($v['imagen']) : 'assets/img/vehicle-placeholder.jpg';
+                                        $reservado = isset($v['reservado']) && ($v['reservado'] === true || $v['reservado'] == 1);
                                     ?>
                                         <div class="col-md-6 mb-4">
                                             <div class="vehicle-card">
@@ -274,9 +274,16 @@
                                                         <button class="btn btn-primary-custom w-100 reserve-btn" data-vehicle-id="<?php echo (int)($v['idVehiculo'] ?? 0); ?>">
                                                             <i class="fas fa-calendar-check me-2"></i>Reservar Ahora
                                                         </button>
+                                                        <button class="btn btn-outline-danger w-100 mt-2 remove-from-cart-btn" data-vehicle-id="<?php echo (int)($v['idVehiculo'] ?? 0); ?>">
+                                                            <i class="fas fa-trash me-2"></i>Quitar del Carrito
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <button class="btn btn-outline-warning w-100 cancel-reservation-btn" data-vehicle-id="<?php echo (int)($v['idVehiculo'] ?? 0); ?>">
+                                                            <i class="fas fa-times-circle me-2"></i>Cancelar Reserva
+                                                        </button>
                                                     <?php endif; ?>
 
-                                                    <div class="reservation-info" id="reservation-info-<?php echo (int)($v['idVehiculo'] ?? 0); ?>">
+                                                    <div class="reservation-info" id="reservation-info-<?php echo (int)($v['idVehiculo'] ?? 0); ?>" style="<?php echo $reservado ? 'display: block;' : 'display: none;'; ?>">
                                                         <h5><i class="fas fa-check-circle"></i> ¡Reservado con éxito!</h5>
                                                         <div class="reservation-detail">
                                                             <i class="fas fa-map-marker-alt"></i>
@@ -340,26 +347,208 @@
                 reserveButton.disabled = true;
                 reserveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Reservando...';
                 
-                // Simulate API call (replace with actual API call)
-                setTimeout(() => {
-                    // On success
-                    reserveButton.classList.add('d-none');
-                    reservationInfo.style.display = 'block';
-                    
-                    // Add reserved badge
-                    const title = vehicleCard.querySelector('.vehicle-title');
-                    if (title && !title.querySelector('.badge')) {
-                        const badge = document.createElement('span');
-                        badge.className = 'badge bg-success ms-2';
-                        badge.textContent = 'Reservado';
-                        title.appendChild(badge);
+                // Make API call to reserve vehicle
+                fetch('index.php?action=reservarVehiculo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `idVehiculo=${vehicleId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        // On success
+                        reserveButton.classList.add('d-none');
+                        reservationInfo.style.display = 'block';
+                        
+                        // Add reserved badge
+                        const title = vehicleCard.querySelector('.vehicle-title');
+                        if (title && !title.querySelector('.badge')) {
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-success ms-2';
+                            badge.textContent = 'Reservado';
+                            title.appendChild(badge);
+                        }
+                        
+                        // Show cancel button and hide remove button
+                        const removeBtn = vehicleCard.querySelector('.remove-from-cart-btn');
+                        const cancelBtn = document.createElement('button');
+                        cancelBtn.className = 'btn btn-outline-warning w-100 cancel-reservation-btn';
+                        cancelBtn.setAttribute('data-vehicle-id', vehicleId);
+                        cancelBtn.innerHTML = '<i class="fas fa-times-circle me-2"></i>Cancelar Reserva';
+                        
+                        if (removeBtn) {
+                            removeBtn.parentNode.replaceChild(cancelBtn, removeBtn);
+                        } else {
+                            reserveButton.parentNode.appendChild(cancelBtn);
+                        }
+                        
+                        // Re-attach event listener to new cancel button
+                        attachCancelReservationListener(cancelBtn);
+                        
+                        // Show success toast
+                        showToast(data.message || '¡Vehículo reservado con éxito!', false, 'success');
+                    } else {
+                        // On error
+                        reserveButton.disabled = false;
+                        reserveButton.innerHTML = originalText;
+                        showToast(data.errors?.[0] || 'Error al reservar el vehículo', true, 'danger');
                     }
-                    
-                    // Show success toast
-                    showToast('¡Vehículo reservado con éxito!', false, 'success');
-                }, 1000);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    reserveButton.disabled = false;
+                    reserveButton.innerHTML = originalText;
+                    showToast('Error de conexión al reservar el vehículo', true, 'danger');
+                });
             });
         });
+
+        // Handle cancel reservation button clicks
+        function attachCancelReservationListener(button) {
+            button.addEventListener('click', function() {
+                const vehicleId = this.getAttribute('data-vehicle-id');
+                const vehicleCard = this.closest('.vehicle-card');
+                const cancelButton = this;
+                const reservationInfo = document.getElementById(`reservation-info-${vehicleId}`);
+                
+                // Show loading state
+                const originalText = cancelButton.innerHTML;
+                cancelButton.disabled = true;
+                cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelando...';
+                
+                // Make API call to cancel reservation
+                fetch('index.php?action=cancelarReserva', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `idVehiculo=${vehicleId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        // On success
+                        reservationInfo.style.display = 'none';
+                        
+                        // Remove reserved badge
+                        const title = vehicleCard.querySelector('.vehicle-title');
+                        const badge = title.querySelector('.badge');
+                        if (badge) {
+                            badge.remove();
+                        }
+                        
+                        // Show reserve button and remove button again
+                        const reserveBtn = document.createElement('button');
+                        reserveBtn.className = 'btn btn-primary-custom w-100 reserve-btn';
+                        reserveBtn.setAttribute('data-vehicle-id', vehicleId);
+                        reserveBtn.innerHTML = '<i class="fas fa-calendar-check me-2"></i>Reservar Ahora';
+                        
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'btn btn-outline-danger w-100 mt-2 remove-from-cart-btn';
+                        removeBtn.setAttribute('data-vehicle-id', vehicleId);
+                        removeBtn.innerHTML = '<i class="fas fa-trash me-2"></i>Quitar del Carrito';
+                        
+                        cancelButton.parentNode.replaceChild(reserveBtn, cancelButton);
+                        reserveBtn.parentNode.appendChild(removeBtn);
+                        
+                        // Re-attach event listeners
+                        attachReserveListener(reserveBtn);
+                        attachRemoveFromCartListener(removeBtn);
+                        
+                        // Show success toast
+                        showToast(data.message || '¡Reserva cancelada correctamente!', false, 'success');
+                    } else {
+                        // On error
+                        cancelButton.disabled = false;
+                        cancelButton.innerHTML = originalText;
+                        showToast(data.errors?.[0] || 'Error al cancelar la reserva', true, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    cancelButton.disabled = false;
+                    cancelButton.innerHTML = originalText;
+                    showToast('Error de conexión al cancelar la reserva', true, 'danger');
+                });
+            });
+        }
+
+        // Handle remove from cart button clicks
+        function attachRemoveFromCartListener(button) {
+            button.addEventListener('click', function() {
+                const vehicleId = this.getAttribute('data-vehicle-id');
+                const vehicleCard = this.closest('.col-md-6');
+                
+                if (!confirm('¿Estás seguro de que quieres eliminar este vehículo del carrito?')) {
+                    return;
+                }
+                
+                // Show loading state
+                const originalText = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Eliminando...';
+                
+                // Make API call to remove from cart
+                fetch('index.php?action=eliminarDelCarrito', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `idVehiculo=${vehicleId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        // Remove vehicle card with animation
+                        vehicleCard.style.transition = 'opacity 0.3s, transform 0.3s';
+                        vehicleCard.style.opacity = '0';
+                        vehicleCard.style.transform = 'scale(0.9)';
+                        
+                        setTimeout(() => {
+                            vehicleCard.remove();
+                            
+                            // Check if cart is empty
+                            const remainingVehicles = document.querySelectorAll('.vehicle-card');
+                            if (remainingVehicles.length === 0) {
+                                location.reload(); // Reload to show empty cart message
+                            }
+                        }, 300);
+                        
+                        // Update cart count
+                        if (data.count !== undefined) {
+                            updateCartBadge(data.count);
+                        }
+                        
+                        // Show success toast
+                        showToast(data.message || '¡Vehículo eliminado del carrito!', false, 'success');
+                    } else {
+                        // On error
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                        showToast(data.errors?.[0] || 'Error al eliminar el vehículo del carrito', true, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                    showToast('Error de conexión al eliminar el vehículo', true, 'danger');
+                });
+            });
+        }
+
+        // Helper functions to attach event listeners
+        function attachReserveListener(button) {
+            button.addEventListener('click', function() {
+                button.click(); // This will trigger the original reserve button handler
+            });
+        }
+
+        // Attach listeners to existing buttons
+        document.querySelectorAll('.cancel-reservation-btn').forEach(attachCancelReservationListener);
+        document.querySelectorAll('.remove-from-cart-btn').forEach(attachRemoveFromCartListener);
     });
     
     // Toast notification function

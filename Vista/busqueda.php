@@ -427,7 +427,13 @@
     </style>
 </head>
 <body>
-    <?php $cartCount = isset($_SESSION['carrito']) && is_array($_SESSION['carrito']) ? count($_SESSION['carrito']) : 0; ?>
+    <?php 
+    $cartCount = 0;
+    if (isset($estaLogueado) && $estaLogueado && isset($usuarioActual)) {
+        $carritoModel = new \Modelo\CarritoModel();
+        $cartCount = $carritoModel->contarVehiculosCarrito((int)$usuarioActual['idUsuario']);
+    }
+    ?>
     <?php $currentAction = $_GET['action'] ?? 'index'; ?>
     <!-- Navegación -->
     <nav class="navbar navbar-expand-lg">

@@ -10,6 +10,7 @@ error_log("Action parameter: " . ($_GET['action'] ?? 'not set'));
 require_once 'app/Core/Database.php';
 require_once 'Modelo/CocheModel.php';
 require_once 'Modelo/UserModel.php';
+require_once 'Modelo/CarritoModel.php';
 require_once 'Controlador/HomeController.php';
 require_once 'Controlador/AuthController.php';
 require_once 'Controlador/AdminController.php';
@@ -112,6 +113,18 @@ switch ($action) {
     case 'cartAdd':
         error_log("Executing cartAdd case");
         $authController->cartAdd();
+        break;
+    case 'reservarVehiculo':
+        error_log("Executing reservarVehiculo case");
+        $authController->reservarVehiculo();
+        break;
+    case 'cancelarReserva':
+        error_log("Executing cancelarReserva case");
+        $authController->cancelarReserva();
+        break;
+    case 'eliminarDelCarrito':
+        error_log("Executing eliminarDelCarrito case");
+        $authController->eliminarDelCarrito();
         break;
     case 'changePassword':
         error_log("Executing changePassword case");

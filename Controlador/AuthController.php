@@ -3,11 +3,13 @@ namespace Controlador;
 
 use Modelo\UserModel;
 use Modelo\CocheModel;
+use Modelo\CarritoModel;
 
 class AuthController
 {
     private UserModel $userModel;
     private CocheModel $cocheModel;
+    private CarritoModel $carritoModel;
 
     private function esAjax(): bool
     {
@@ -27,6 +29,7 @@ class AuthController
     {
         $this->userModel = new UserModel();
         $this->cocheModel = new CocheModel();
+        $this->carritoModel = new CarritoModel();
     }
 
     public function mostrarLogin(): void
@@ -468,14 +471,8 @@ class AuthController
 
         $vehiculosCarrito = [];
         if (!$needsContact) {
-            $ids = isset($_SESSION['carrito']) && is_array($_SESSION['carrito']) ? array_map('intval', $_SESSION['carrito']) : [];
-            $ids = array_values(array_unique(array_filter($ids, fn($id) => $id > 0)));
-            foreach ($ids as $idVehiculo) {
-                $v = $this->cocheModel->obtenerVehiculoDetalle((int)$idVehiculo);
-                if ($v) {
-                    $vehiculosCarrito[] = $v;
-                }
-            }
+            $idUsuario = (int)($_SESSION['usuario']['idUsuario'] ?? 0);
+            $vehiculosCarrito = $this->carritoModel->obtenerVehiculosCarrito($idUsuario);
         }
         require_once __DIR__ . '/../Vista/auth/carrito.php';
     }
@@ -568,20 +565,139 @@ class AuthController
             $this->responderJson(['ok' => false, 'errors' => ['Vehículo inválido']], 422);
         }
 
-        if (!isset($_SESSION['carrito']) || !is_array($_SESSION['carrito'])) {
-            $_SESSION['carrito'] = [];
+        $idUsuario = (int)($_SESSION['usuario']['idUsuario'] ?? 0);
+        if ($idUsuario <= 0) {
+            $this->responderJson(['ok' => false, 'errors' => ['Usuario inválido']], 422);
         }
 
-        $cart = array_map('intval', (array)$_SESSION['carrito']);
-        if (!in_array($idVehiculo, $cart, true)) {
-            $cart[] = $idVehiculo;
+        // Verificar si ya está en el carrito
+        if ($this->carritoModel->yaEstaEnCarrito($idUsuario, $idVehiculo)) {
+            $this->responderJson(['ok' => false, 'errors' => ['El vehículo ya está en tu carrito']], 422);
         }
 
-        $_SESSION['carrito'] = $cart;
-        $this->responderJson([
-            'ok' => true,
-            'count' => count($cart),
-        ]);
+        // Agregar a la base de datos
+        if ($this->carritoModel->agregarAlCarrito($idUsuario, $idVehiculo)) {
+            $count = $this->carritoModel->contarVehiculosCarrito($idUsuario);
+            $this->responderJson([
+                'ok' => true,
+                'count' => $count,
+            ]);
+        } else {
+            $this->responderJson(['ok' => false, 'errors' => ['No se pudo añadir el vehículo al carrito']], 500);
+        }
+    }
+
+    public function reservarVehiculo(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->responderJson(['ok' => false, 'errors' => ['Método no permitido']], 405);
+        }
+
+        if (!$this->estaLogueado()) {
+            $this->responderJson([
+                'ok' => false,
+                'errors' => ['Debes iniciar sesión para reservar'],
+            ], 401);
+        }
+
+        $idVehiculo = (int)($_POST['idVehiculo'] ?? 0);
+        if ($idVehiculo <= 0) {
+            $this->responderJson(['ok' => false, 'errors' => ['Vehículo inválido']], 422);
+        }
+
+        $idUsuario = (int)($_SESSION['usuario']['idUsuario'] ?? 0);
+        if ($idUsuario <= 0) {
+            $this->responderJson(['ok' => false, 'errors' => ['Usuario inválido']], 422);
+        }
+
+        // Verificar que el vehículo está en el carrito del usuario
+        if (!$this->carritoModel->yaEstaEnCarrito($idUsuario, $idVehiculo)) {
+            $this->responderJson(['ok' => false, 'errors' => ['El vehículo no está en tu carrito']], 422);
+        }
+
+        // Reservar el vehículo
+        if ($this->carritoModel->reservarVehiculo($idUsuario, $idVehiculo)) {
+            $this->responderJson([
+                'ok' => true,
+                'message' => 'Vehículo reservado correctamente',
+            ]);
+        } else {
+            $this->responderJson(['ok' => false, 'errors' => ['No se pudo reservar el vehículo']], 500);
+        }
+    }
+
+    public function cancelarReserva(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->responderJson(['ok' => false, 'errors' => ['Método no permitido']], 405);
+        }
+
+        if (!$this->estaLogueado()) {
+            $this->responderJson([
+                'ok' => false,
+                'errors' => ['Debes iniciar sesión para cancelar una reserva'],
+            ], 401);
+        }
+
+        $idVehiculo = (int)($_POST['idVehiculo'] ?? 0);
+        if ($idVehiculo <= 0) {
+            $this->responderJson(['ok' => false, 'errors' => ['Vehículo inválido']], 422);
+        }
+
+        $idUsuario = (int)($_SESSION['usuario']['idUsuario'] ?? 0);
+        if ($idUsuario <= 0) {
+            $this->responderJson(['ok' => false, 'errors' => ['Usuario inválido']], 422);
+        }
+
+        // Verificar que el vehículo está en el carrito del usuario
+        if (!$this->carritoModel->yaEstaEnCarrito($idUsuario, $idVehiculo)) {
+            $this->responderJson(['ok' => false, 'errors' => ['El vehículo no está en tu carrito']], 422);
+        }
+
+        // Cancelar la reserva
+        if ($this->carritoModel->cancelarReserva($idUsuario, $idVehiculo)) {
+            $this->responderJson([
+                'ok' => true,
+                'message' => 'Reserva cancelada correctamente',
+            ]);
+        } else {
+            $this->responderJson(['ok' => false, 'errors' => ['No se pudo cancelar la reserva']], 500);
+        }
+    }
+
+    public function eliminarDelCarrito(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->responderJson(['ok' => false, 'errors' => ['Método no permitido']], 405);
+        }
+
+        if (!$this->estaLogueado()) {
+            $this->responderJson([
+                'ok' => false,
+                'errors' => ['Debes iniciar sesión para eliminar del carrito'],
+            ], 401);
+        }
+
+        $idVehiculo = (int)($_POST['idVehiculo'] ?? 0);
+        if ($idVehiculo <= 0) {
+            $this->responderJson(['ok' => false, 'errors' => ['Vehículo inválido']], 422);
+        }
+
+        $idUsuario = (int)($_SESSION['usuario']['idUsuario'] ?? 0);
+        if ($idUsuario <= 0) {
+            $this->responderJson(['ok' => false, 'errors' => ['Usuario inválido']], 422);
+        }
+
+        // Eliminar del carrito
+        if ($this->carritoModel->eliminarDelCarrito($idUsuario, $idVehiculo)) {
+            $this->responderJson([
+                'ok' => true,
+                'message' => 'Vehículo eliminado del carrito',
+                'count' => $this->carritoModel->contarVehiculosCarrito($idUsuario),
+            ]);
+        } else {
+            $this->responderJson(['ok' => false, 'errors' => ['No se pudo eliminar el vehículo del carrito']], 500);
+        }
     }
 
     public function mostrarCambioContrasenaPaso1(): void
