@@ -487,6 +487,7 @@
     </style>
 </head>
 <body>
+    <?php $cartCount = isset($_SESSION['carrito']) && is_array($_SESSION['carrito']) ? count($_SESSION['carrito']) : 0; ?>
     <?php $currentAction = $_GET['action'] ?? 'index'; ?>
     <!-- Navegación -->
     <nav class="navbar navbar-expand-lg">
@@ -511,6 +512,15 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#contacto" data-section="contacto">Contacto</a>
                     </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="index.php?action=carrito" id="cartNavBtn" aria-label="Carrito">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cartCountBadge" style="<?php echo ($cartCount > 0) ? '' : 'display:none;'; ?>">
+                                <?php echo (int)$cartCount; ?>
+                            </span>
+                        </a>
+                    </li>
                     
                     <li class="nav-item">
                         <div class="user-menu-container">
@@ -532,6 +542,10 @@
                                         <a href="index.php?action=perfil" class="popup-action">
                                             <i class="fas fa-user"></i>
                                             <span>Ver Perfil</span>
+                                        </a>
+                                        <a href="index.php?action=carrito" class="popup-action">
+                                            <i class="fas fa-shopping-cart"></i>
+                                            <span>Carrito</span>
                                         </a>
                                         <?php if ($esAdmin): ?>
                                             <a href="index.php?action=admin" class="popup-action">
@@ -730,6 +744,9 @@
                                     <a class="car-btn" href="index.php?action=detalle&idVehiculo=<?php echo (int)$coche['idVehiculo']; ?>">
                                         <i class="fas fa-eye"></i> Ver Detalles
                                     </a>
+                                    <button class="car-btn js-add-to-cart" type="button" data-id-vehiculo="<?php echo (int)$coche['idVehiculo']; ?>" aria-label="Añadir al carrito">
+                                        <i class="fas fa-shopping-cart"></i> Añadir al carrito
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -789,6 +806,9 @@
             
             const userMenuBtn = document.getElementById('userMenuBtn');
             const userPopup = document.getElementById('userPopup');
+
+            const cartNavBtn = document.getElementById('cartNavBtn');
+            const cartCountBadge = document.getElementById('cartCountBadge');
             
             if (userMenuBtn && userPopup) {
                 console.log('✅ User menu elements found');
@@ -879,6 +899,109 @@
 
                     sectionsToWatch.forEach(s => observer.observe(s));
                 }
+
+                const showToast = (message, isError = false) => {
+                    const toast = document.createElement('div');
+                    toast.style.position = 'fixed';
+                    toast.style.top = '16px';
+                    toast.style.right = '16px';
+                    toast.style.zIndex = '20000';
+                    toast.style.background = isError ? '#dc3545' : '#198754';
+                    toast.style.color = '#fff';
+                    toast.style.padding = '12px 14px';
+                    toast.style.borderRadius = '12px';
+                    toast.style.boxShadow = '0 10px 25px rgba(0,0,0,.15)';
+                    toast.style.fontWeight = '600';
+                    toast.style.maxWidth = '360px';
+                    toast.textContent = message;
+                    document.body.appendChild(toast);
+
+                    setTimeout(() => {
+                        toast.style.transition = 'opacity .25s ease, transform .25s ease';
+                        toast.style.opacity = '0';
+                        toast.style.transform = 'translateY(-8px)';
+                    }, 1600);
+                    setTimeout(() => toast.remove(), 2000);
+                };
+
+                const flyToCart = (imgEl) => {
+                    if (!imgEl || !cartNavBtn) return;
+                    const imgRect = imgEl.getBoundingClientRect();
+                    const cartRect = cartNavBtn.getBoundingClientRect();
+
+                    const clone = imgEl.cloneNode(true);
+                    clone.style.position = 'fixed';
+                    clone.style.left = imgRect.left + 'px';
+                    clone.style.top = imgRect.top + 'px';
+                    clone.style.width = imgRect.width + 'px';
+                    clone.style.height = imgRect.height + 'px';
+                    clone.style.objectFit = 'contain';
+                    clone.style.zIndex = '15000';
+                    clone.style.pointerEvents = 'none';
+                    clone.style.transition = 'transform .6s ease, opacity .6s ease';
+                    document.body.appendChild(clone);
+
+                    const dx = (cartRect.left + cartRect.width / 2) - (imgRect.left + imgRect.width / 2);
+                    const dy = (cartRect.top + cartRect.height / 2) - (imgRect.top + imgRect.height / 2);
+
+                    requestAnimationFrame(() => {
+                        clone.style.transform = `translate(${dx}px, ${dy}px) scale(0.2)`;
+                        clone.style.opacity = '0.2';
+                    });
+
+                    clone.addEventListener('transitionend', () => clone.remove(), { once: true });
+                };
+
+                const updateCartBadge = (count) => {
+                    if (!cartCountBadge) return;
+                    const c = parseInt(String(count), 10);
+                    if (!isFinite(c) || c <= 0) {
+                        cartCountBadge.style.display = 'none';
+                        cartCountBadge.textContent = '';
+                    } else {
+                        cartCountBadge.style.display = '';
+                        cartCountBadge.textContent = String(c);
+                    }
+                };
+
+                document.addEventListener('click', async (e) => {
+                    const btn = e.target && e.target.closest ? e.target.closest('.js-add-to-cart') : null;
+                    if (!btn) return;
+                    e.preventDefault();
+
+                    const idVehiculo = btn.getAttribute('data-id-vehiculo');
+                    if (!idVehiculo) return;
+
+                    const card = btn.closest('.car-card');
+                    const img = card ? card.querySelector('.car-image') : null;
+
+                    const prevDisabled = btn.disabled;
+                    btn.disabled = true;
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('idVehiculo', idVehiculo);
+                        const res = await fetch('index.php?action=cartAdd', {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: formData
+                        });
+                        const data = await res.json();
+
+                        if (data && data.ok) {
+                            flyToCart(img);
+                            updateCartBadge(data.count);
+                            showToast('Se ha guardado satisfactoriamente en el carrito');
+                        } else {
+                            const msg = (data && Array.isArray(data.errors) && data.errors[0]) ? data.errors[0] : 'No se pudo añadir al carrito';
+                            showToast(String(msg), true);
+                        }
+                    } catch (err) {
+                        showToast('Error de conexión. Inténtalo de nuevo.', true);
+                    } finally {
+                        btn.disabled = prevDisabled;
+                    }
+                });
             } else {
                 console.error('❌ User menu elements not found');
             }

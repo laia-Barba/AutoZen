@@ -101,6 +101,18 @@ switch ($action) {
         error_log("Executing saveProfile case");
         $authController->guardarEditarPerfil();
         break;
+    case 'carrito':
+        error_log("Executing carrito case");
+        $authController->mostrarCarrito();
+        break;
+    case 'carritoSave':
+        error_log("Executing carritoSave case");
+        $authController->guardarCarrito();
+        break;
+    case 'cartAdd':
+        error_log("Executing cartAdd case");
+        $authController->cartAdd();
+        break;
     case 'changePassword':
         error_log("Executing changePassword case");
         $authController->mostrarCambioContrasenaPaso1();

@@ -47,6 +47,10 @@
                                         <i class="fas fa-user"></i>
                                         <span>Ver Perfil</span>
                                     </a>
+                                    <a href="index.php?action=carrito" class="popup-action">
+                                        <i class="fas fa-shopping-cart"></i>
+                                        <span>Carrito</span>
+                                    </a>
                                     <?php if (isset($esAdmin) && $esAdmin): ?>
                                         <a href="index.php?action=admin" class="popup-action">
                                             <i class="fas fa-cog"></i>

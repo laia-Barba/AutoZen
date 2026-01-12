@@ -2,10 +2,12 @@
 namespace Controlador;
 
 use Modelo\UserModel;
+use Modelo\CocheModel;
 
 class AuthController
 {
     private UserModel $userModel;
+    private CocheModel $cocheModel;
 
     private function esAjax(): bool
     {
@@ -24,6 +26,7 @@ class AuthController
     public function __construct()
     {
         $this->userModel = new UserModel();
+        $this->cocheModel = new CocheModel();
     }
 
     public function mostrarLogin(): void
@@ -447,6 +450,138 @@ class AuthController
         $_SESSION['datos_formulario'] = $_POST;
         header('Location: index.php?action=editProfile');
         exit;
+    }
+
+    public function mostrarCarrito(): void
+    {
+        if (!$this->estaLogueado()) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        $usuario = $this->userModel->buscarPorId((int)$_SESSION['usuario']['idUsuario']);
+        $correo = trim((string)($_SESSION['usuario']['Correo'] ?? ($usuario['Correo'] ?? '')));
+        $telefono = trim((string)($_SESSION['usuario']['Telefono'] ?? ($usuario['Telefono'] ?? '')));
+        $telefonoDigits = preg_replace('/\D+/', '', $telefono);
+
+        $needsContact = ($correo === '' || !filter_var($correo, FILTER_VALIDATE_EMAIL) || !preg_match('/^\d{9}$/', (string)$telefonoDigits));
+
+        $vehiculosCarrito = [];
+        if (!$needsContact) {
+            $ids = isset($_SESSION['carrito']) && is_array($_SESSION['carrito']) ? array_map('intval', $_SESSION['carrito']) : [];
+            $ids = array_values(array_unique(array_filter($ids, fn($id) => $id > 0)));
+            foreach ($ids as $idVehiculo) {
+                $v = $this->cocheModel->obtenerVehiculoDetalle((int)$idVehiculo);
+                if ($v) {
+                    $vehiculosCarrito[] = $v;
+                }
+            }
+        }
+        require_once __DIR__ . '/../Vista/auth/carrito.php';
+    }
+
+    public function guardarCarrito(): void
+    {
+        if (!$this->estaLogueado()) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?action=carrito');
+            exit;
+        }
+
+        $idUsuario = (int)($_SESSION['usuario']['idUsuario'] ?? 0);
+        if ($idUsuario <= 0) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        $correo = trim((string)($_POST['correo'] ?? ''));
+        $telefono = trim((string)($_POST['telefono'] ?? ''));
+
+        $telefonoDigits = preg_replace('/\D+/', '', $telefono);
+
+        $errores = [];
+        if ($correo === '') {
+            $errores[] = 'El correo es obligatorio';
+        } elseif (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+            $errores[] = 'El correo no es válido';
+        } elseif ($this->userModel->existeCorreoEnOtroUsuario($correo, $idUsuario)) {
+            $errores[] = 'El correo ya está registrado';
+        }
+
+        if ($telefono === '') {
+            $errores[] = 'El teléfono es obligatorio para poder reservar';
+        } elseif (!preg_match('/^\d{9}$/', (string)$telefonoDigits)) {
+            $errores[] = 'El teléfono debe tener exactamente 9 números';
+        }
+
+        if (!empty($errores)) {
+            $_SESSION['errores'] = $errores;
+            $_SESSION['datos_formulario'] = [
+                'correo' => $correo,
+                'telefono' => $telefono,
+            ];
+            header('Location: index.php?action=carrito');
+            exit;
+        }
+
+        $nombreActual = (string)($_SESSION['usuario']['Nombre'] ?? '');
+        $telefonoParam = $telefonoDigits === '' ? null : (string)$telefonoDigits;
+
+        $ok = $this->userModel->actualizarUsuario($idUsuario, $nombreActual, $correo, $telefonoParam);
+        if ($ok) {
+            $_SESSION['usuario']['Correo'] = $correo;
+            $_SESSION['usuario']['Telefono'] = (string)$telefonoDigits;
+            unset($_SESSION['datos_formulario']);
+            $_SESSION['mensaje'] = 'Datos de contacto guardados correctamente.';
+            header('Location: index.php?action=carrito');
+            exit;
+        }
+
+        $_SESSION['errores'] = ['No se pudieron guardar los datos de contacto'];
+        $_SESSION['datos_formulario'] = [
+            'correo' => $correo,
+            'telefono' => $telefono,
+        ];
+        header('Location: index.php?action=carrito');
+        exit;
+    }
+
+    public function cartAdd(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->responderJson(['ok' => false, 'errors' => ['Método no permitido']], 405);
+        }
+
+        if (!$this->estaLogueado()) {
+            $this->responderJson([
+                'ok' => false,
+                'errors' => ['Debes iniciar sesión para añadir al carrito'],
+            ], 401);
+        }
+
+        $idVehiculo = (int)($_POST['idVehiculo'] ?? 0);
+        if ($idVehiculo <= 0) {
+            $this->responderJson(['ok' => false, 'errors' => ['Vehículo inválido']], 422);
+        }
+
+        if (!isset($_SESSION['carrito']) || !is_array($_SESSION['carrito'])) {
+            $_SESSION['carrito'] = [];
+        }
+
+        $cart = array_map('intval', (array)$_SESSION['carrito']);
+        if (!in_array($idVehiculo, $cart, true)) {
+            $cart[] = $idVehiculo;
+        }
+
+        $_SESSION['carrito'] = $cart;
+        $this->responderJson([
+            'ok' => true,
+            'count' => count($cart),
+        ]);
     }
 
     public function mostrarCambioContrasenaPaso1(): void

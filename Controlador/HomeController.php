@@ -202,8 +202,8 @@ class HomeController
                                     <a class="btn-primary-custom" href="index.php?action=detalle&idVehiculo=<?php echo (int)$coche['idVehiculo']; ?>">
                                         <i class="fas fa-eye"></i> Ver Detalles
                                     </a>
-                                    <button class="btn-secondary-custom">
-                                        <i class="fas fa-heart"></i>
+                                    <button class="btn-secondary-custom js-add-to-cart" type="button" data-id-vehiculo="<?php echo (int)$coche['idVehiculo']; ?>" aria-label="Añadir al carrito">
+                                        <i class="fas fa-shopping-cart"></i>
                                     </button>
                                 </div>
                             </div>
