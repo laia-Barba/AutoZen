@@ -1,7 +1,7 @@
 <?php
 namespace Modelo;
 
-use App\Core\Database;
+use Controlador\Database;
 use PDO;
 
 /**

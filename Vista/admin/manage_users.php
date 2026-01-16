@@ -138,7 +138,7 @@
 
                                     <?php if ($esMismo): ?>
                                         <span class="text-muted">No editable</span>
-                                    <?php else: ?>
+                                    <?php else: ?>    //ajax 
                                         <form action="index.php?action=toggleUserAdmin" method="POST" class="d-inline">
                                             <input type="hidden" name="idUsuario" value="<?php echo htmlspecialchars((string)$u['idUsuario']); ?>">
                                             <input type="hidden" name="isAdmin" value="<?php echo ((int)$u['isAdmin'] === 1) ? '0' : '1'; ?>">

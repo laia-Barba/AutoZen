@@ -9,7 +9,7 @@ error_log("URI de la petición: " . $_SERVER['REQUEST_URI']);
 error_log("Parámetro action: " . ($_GET['action'] ?? 'no definido'));
 
 // Incluir los archivos necesarios para el funcionamiento
-require_once 'app/Core/Database.php';          // Conexión a la base de datos
+require_once 'Controlador/Database.php';        // Conexión a la base de datos
 require_once 'Modelo/CocheModel.php';         // Modelo para gestionar vehículos
 require_once 'Modelo/UserModel.php';          // Modelo para gestionar usuarios
 require_once 'Modelo/CarritoModel.php';       // Modelo para gestionar el carrito
